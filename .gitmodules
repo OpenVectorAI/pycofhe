@@ -1,0 +1,4 @@
+[submodule "thirdparty/CoFHE"]
+	path = thirdparty/CoFHE
+	url = https://github.com/OpenVectorAI/CoFHE.git
+	branch = dev

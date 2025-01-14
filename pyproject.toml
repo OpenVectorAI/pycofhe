@@ -1,0 +1,61 @@
+[project]
+name = "pycofhe"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Pulkit Chahar", email = "pulkitchahar91@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.scikit-build]
+minimum-version = "build-system.requires"
+build-dir = "build/{wheel_tag}"
+
+[build-system]
+requires = ["scikit-build-core>=0.10", "pybind11"]
+build-backend = "scikit_build_core.build"
+
+[dependency-groups]
+dev = [
+    "black>=24.10.0",
+    "isort>=5.13.2",
+    "mypy>=1.14.1",
+    "pycofhe",
+    "pylint>=3.3.3",
+    "pytest>=8.3.4",
+    "python-dotenv>=1.0.1",
+    "sphinx>=8.1.3",
+]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+
+[tool.mypy]
+python_version = "3.11"
+warn_unused_configs = true
+check_untyped_defs = true
+
+[tool.pylint]
+enable = "all"
+disable = "unnecessary-pass"
+const-naming-style = "UPPER_CASE"
+class-naming-style = "PascalCase"
+attr-naming-style = "snake_case"
+method-naming-style = "snake_case"
+function-naming-style = "snake_case"
+argument-naming-style = "snake_case"
+variable-naming-style = "snake_case"
+inlinevar-naming-style = "snake_case"
+
+[tool.black]
+line-length = 80
+
+[tool.isort]
+profile = "black"
+
+[tool.uv.sources]
+pycofhe = { workspace = true }
