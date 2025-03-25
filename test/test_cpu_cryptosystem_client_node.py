@@ -1,8 +1,9 @@
-"""Test the CPU cryptosystem client node class."""
+"""Test the CPU cryptosystem client client_node class."""
+
+from __future__ import annotations
 
 import pytest
 
-from dotenv import dotenv_values
 
 from pycofhe.network import (
     ComputeOperation,
@@ -14,9 +15,9 @@ from pycofhe.network import (
     ComputeResponseStatus,
     DataEncryptionType,
     DataType,
-    make_cpucryptosystem_client_node,
+    perform_tensor_op,
+    perform_tensor_decryption,
 )
-
 
 def test_compute_response():
     """Test ComputeResponse class"""
@@ -91,18 +92,13 @@ def test_compute_request():
     assert req.operation.operation == ComputeOperation.DECRYPT
     assert req.operation.operands[0].data == "999"
 
-@pytest.mark.skip(reason="This test does not pass, it is not clear why. But the code works when ran it manually after installing pycofhe.")
-def test_client_node_multiply():
+
+def test_client_node_multiply(client_node):
     """
     Test a homomorphic multiply and decrypt sequence using a CPUCryptoSystemClientNode.
     """
-    env_vars = dotenv_values(".env")
-    cert_path = env_vars["CERT_PATH"]
-    node = make_cpucryptosystem_client_node(
-        "127.0.0.1", "50051", "127.0.0.1", "4455", cert_path
-    )
-    cs = node.cryptosystem
-    pk = node.network_encryption_key
+    cs = client_node.cryptosystem
+    pk = client_node.network_encryption_key
 
     c1 = cs.encrypt_tensor(pk, cs.make_plaintext_tensor([4], [1, 2**5, 3, 4]))
     p1 = cs.make_plaintext_tensor([4], [5, 6, 7, 8])
@@ -124,7 +120,7 @@ def test_client_node_multiply():
         ComputeOperationType.BINARY, ComputeOperation.MULTIPLY, [op1, op2]
     )
     req = ComputeRequest(op_instance)
-    res = node.compute(req)
+    res = client_node.compute(req)
 
     dop = ComputeOperationOperand(
         DataType.TENSOR, DataEncryptionType.CIPHERTEXT, res.data_bytes
@@ -133,7 +129,7 @@ def test_client_node_multiply():
         ComputeOperationType.UNARY, ComputeOperation.DECRYPT, [dop]
     )
     req = ComputeRequest(dop_instance)
-    res = node.compute(req)
+    res = client_node.compute(req)
 
     dres = cs.deserialize_plaintext_tensor(res.data_bytes)
     float_res = cs.get_float_from_plaintext_tensor(dres)
@@ -143,3 +139,21 @@ def test_client_node_multiply():
     #   c2 = p1 => [5, 6, 7, 8]
     #   multiply => [5*5, 192*6, 21*7, 32*8] = [25, 1152, 147, 256]
     assert float_res == [25.0, 1152.0, 147.0, 256.0]
+
+
+def test_util_funcs(client_node):
+    """
+    Test a homomorphic multiply and decrypt sequence using a CPUCryptoSystemClientNode.
+    """
+    cs = client_node.cryptosystem
+    pk = client_node.network_encryption_key
+
+    c1 = cs.encrypt_tensor(pk, cs.make_plaintext_tensor([4], [1, 2**5, 3, 4]))
+    p1 = cs.make_plaintext_tensor([4], [5, 6, 7, 8])
+
+    res = perform_tensor_op(client_node, ComputeOperation.MULTIPLY, c1, p1)
+    dres = perform_tensor_decryption(client_node, res)
+
+    float_res = cs.get_float_from_plaintext_tensor(dres)
+
+    assert float_res == [5.0, 192.0, 21.0, 32.0]

@@ -1,11 +1,16 @@
 """Typing stubs for the network module"""
 
-# pylint: disable=unused-argument,unnecessary-ellipsis
+from __future__ import annotations
 
 from enum import Enum
-from typing import List, Union, overload
+from typing import List, TYPE_CHECKING, overload
+
+if TYPE_CHECKING:
+    from pycofhe.network.binary_scheme_core import *
 
 from pycofhe.cpu_cryptosystem import CPUCryptoSystem, PublicKey
+
+# pylint: disable=unused-argument,unnecessary-ellipsis
 
 class ComputeResponseStatus(Enum):
     """

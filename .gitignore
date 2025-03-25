@@ -13,3 +13,4 @@ docs/source/_autosummary
 
 .env
 .vscode
+server.pem

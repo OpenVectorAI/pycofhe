@@ -14,17 +14,16 @@ ClientNode<CPUCryptoSystem> make_cpucryptosystem_client_node(
     const std::string& setup_ip, const std::string& setup_port,
     const std::string& cert_file = "./server.pem") {
     auto setup_node_details = NodeDetails(setup_ip, setup_port);
-    return make_client_node<CPUCryptoSystem>(setup_node_details, cert_file);
+    return
+        make_client_node<CPUCryptoSystem>(setup_node_details, cert_file);
 }
 
 void init_client_node_bindings(py::module_& m) {
-
-    using ClientNode = ClientNode<CPUCryptoSystem>;
-
-    py::class_<ClientNode>(m, "CPUCryptoSystemClientNode")
+    py::class_<ClientNode<CPUCryptoSystem>>(m, "CPUCryptoSystemClientNode")
         .def(
             "compute",
-            [](ClientNode& node, const ComputeRequest& request) {
+            [](ClientNode<CPUCryptoSystem>& node,
+               const ComputeRequest& request) {
                 ComputeResponse* response = nullptr;
                 try {
                     node.compute(request, &response);
@@ -48,7 +47,9 @@ void init_client_node_bindings(py::module_& m) {
             )pbdoc")
         .def_property_readonly(
             "cryptosystem",
-            py::overload_cast<>(&ClientNode::crypto_system, py::const_),
+            py::overload_cast<>(&ClientNode<CPUCryptoSystem>::crypto_system,
+                                py::const_),
+            py::keep_alive<0, 1>(),
             R"pbdoc(
             Get the cryptosystem of the client node.
 
@@ -57,7 +58,9 @@ void init_client_node_bindings(py::module_& m) {
         )pbdoc")
         .def_property_readonly(
             "network_encryption_key",
-            py::overload_cast<>(&ClientNode::network_public_key, py::const_),
+            py::overload_cast<>(
+                &ClientNode<CPUCryptoSystem>::network_public_key, py::const_),
+            py::keep_alive<0, 1>(),
             R"pbdoc(
             Get the network encryption key of the client node.
 
@@ -79,6 +82,6 @@ void init_client_node_bindings(py::module_& m) {
             cert_file (str): The certificate file for the client node. Default is "./server.pem".
 
         Returns:
-            ClientNode: A client node for the CPU cryptosystem.
+            ClientNode<CPUCryptoSystem>: A client node for the CPU cryptosystem.
     )pbdoc");
 }

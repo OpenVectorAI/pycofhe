@@ -1,10 +1,12 @@
 """Typing stubs for the CPU cryptosystem module"""
 
-# pylint: disable=unused-argument,unnecessary-ellipsis
+from __future__ import annotations
 
 from typing import List, Union, overload
 
 from pycofhe.tensor.tensor_core import GenericTensor
+
+# pylint: disable=unused-argument,unnecessary-ellipsis
 
 class SecretKey:
     """Represents a secret key."""
@@ -435,12 +437,14 @@ class CPUCryptoSystem:
         """
         ...
 
-    def get_float_from_plaintext(self, pt: PlainText) -> float:
+    def get_float_from_plaintext(self, pt: PlainText, scaling_factor: int=1, depth: int=1) -> float:
         """
         Convert a plaintext back into a floating-point approximation.
 
         Args:
             pt (PlainText): The plaintext.
+            scaling_factor (int): The scaling factor.
+            depth (int): The depth.
 
         Returns:
             float: The floating-point value.
@@ -448,13 +452,15 @@ class CPUCryptoSystem:
         ...
 
     def get_float_from_plaintext_tensor(
-        self, pts: CPUCryptoSystemPlainTextTensor
+        self, pts: CPUCryptoSystemPlainTextTensor, scaling_factor: int=1, depth: int=1
     ) -> List[float]:
         """
         Convert a tensor of plaintexts back into a list of floating-point approximations.
 
         Args:
             pts (CPUCryptoSystemPlainTextTensor): The tensor of plaintexts.
+            scaling_factor (int): The scaling factor.
+            depth (int): The depth.
 
         Returns:
             List[float]: The list of floating-point values.
@@ -471,7 +477,7 @@ class CPUCryptoSystem:
         ...
 
     @staticmethod
-    def deserialize(data: str) -> "CPUCryptoSystem":
+    def deserialize(data: str) -> CPUCryptoSystem:
         """
         Deserialize a CPUCryptoSystem instance from a string.
 

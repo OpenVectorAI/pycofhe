@@ -217,5 +217,36 @@ void init_tensor_class_bindings(pybind11::module_& m,
         .def("make_contiguous", &Tensor::make_contiguous,
              R"pbdoc(
         Make the tensor contiguous.
+        )pbdoc")
+        .def(
+            "transpose",
+            [&](Tensor& t) {
+                if (t.ndim() != 2) {
+                    throw std::runtime_error("Transpose is only supported for "
+                                             "2-dimensional tensors.");
+                }
+                Tensor transposed(t.shape()[1], t.shape()[0], T());
+                for (size_t i = 0; i < t.shape()[0]; i++) {
+                    for (size_t j = 0; j < t.shape()[1]; j++) {
+                        transposed.at(j, i) = t.at(i, j);
+                    }
+                }
+                return transposed;
+            },
+            R"pbdoc(
+        Transpose the tensor.
+
+        Returns:
+            Tensor: The transposed tensor.
+        )pbdoc")
+        .def("broadcast", &Tensor::broadcast, py::arg("shape"),
+             R"pbdoc(
+        Broadcast the tensor to the given shape.
+
+        Args:
+            shape (List[int]): The shape to broadcast to.
+
+        Returns:
+            Tensor: The broadcasted tensor.
         )pbdoc");
 }

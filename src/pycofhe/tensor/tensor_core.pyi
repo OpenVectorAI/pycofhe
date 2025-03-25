@@ -1,8 +1,10 @@
 """Typing stubs for the tensor module"""
 
-# pylint: disable=unused-argument,unnecessary-ellipsis
+from __future__ import annotations
 
 from typing import Generic, List, TypeVar, Union, overload
+
+# pylint: disable=unused-argument,unnecessary-ellipsis
 
 T = TypeVar("T")
 
@@ -249,7 +251,7 @@ class GenericTensor(Generic[T]):
         """
         ...
 
-    def flatten(self) -> "GenericTensor[T]":
+    def flatten(self) -> GenericTensor[T]:
         """
         Flatten the tensor.
 
@@ -258,7 +260,7 @@ class GenericTensor(Generic[T]):
         """
         ...
 
-    def reshape(self, shape: List[int]) -> "GenericTensor[T]":
+    def reshape(self, shape: List[int]) -> GenericTensor[T]:
         """
         Reshape the tensor.
 
@@ -276,16 +278,26 @@ class GenericTensor(Generic[T]):
         """
         ...
 
-class Tensor(GenericTensor[float]):
-    """
-    A tensor of floats.
-    """
+    def transpose(self) -> GenericTensor[T]:
+        """
+        Transpose the tensor.
 
-    pass
+        Returns:
+            GenericTensor[T]: The transposed tensor.
+        """
+        ...
 
-class IntTensor(GenericTensor[int]):
-    """
-    A tensor of integers.
-    """
+    def broadcast(self, shape: List[int]) -> GenericTensor[T]:
+        """
+        Broadcast the tensor to the given shape.
 
-    pass
+        Args:
+            shape (List[int]): The shape to broadcast to.
+
+        Returns:
+            GenericTensor[T]: The broadcasted tensor.
+        """
+        ...
+
+Tensor = GenericTensor[float]
+IntTensor = GenericTensor[int]

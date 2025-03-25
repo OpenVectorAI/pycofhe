@@ -4,6 +4,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include <gmp.h>
+
 #include "cofhe.hpp"
 #include "tensor/tensor_pyb.hpp"
 
@@ -377,28 +379,37 @@ PYBIND11_MODULE(cpu_cryptosystem_core, m) {
                     Tensor[PlainText]: The tensor of plaintexts corresponding to the values.
             )pbdoc")
         .def("get_float_from_plaintext",
-             &CPUCryptoSystem::get_float_from_plaintext, py::arg("pt"),
+             &CPUCryptoSystem::get_float_from_plaintext, py::arg("pt"), py::arg("scaling_factor") = 1, py::arg("depth") = 1,
              R"pbdoc(
                 Convert a plaintext back into a floating-point approximation.
 
                 Args:
                     pt (PlainText): The plaintext.
+                    scaling_factor (int): The scaling factor.
+                    depth (int): The depth.
 
                 Returns:
                     float: The floating-point value.
             )pbdoc")
         .def(
             "get_float_from_plaintext_tensor",
-            [](CPUCryptoSystem& cs, const Tensor<PlainText*>& pts) {
+            [](CPUCryptoSystem& cs, const Tensor<PlainText*>& pts,
+               unsigned int scale_factor = 1, unsigned int depth = 1) {
                 std::vector<float> values;
                 auto flat_pts = pts;
                 flat_pts.flatten();
                 for (size_t i = 0; i < flat_pts.size(); i++) {
-                    values.push_back(cs.get_float_from_plaintext(*flat_pts[i]));
+                    // values.push_back(cs.get_float_from_plaintext(*flat_pts.at(i), scale_factor, depth));
+                    float val = cs.get_float_from_plaintext(*flat_pts.at(i), scale_factor, depth);
+                    if (std::isinf(val) || std::isnan(val)) {
+                        throw std::runtime_error(
+                            "Overflow detected for i=" + std::to_string(i));
+                    }
+                    values.push_back(val);
                 }
-                return values;
+                return py::cast(values);
             },
-            py::arg("pts"),
+            py::arg("pts"), py::arg("scale_factor") = 1, py::arg("depth") = 1,
             R"pbdoc(
                 Convert a tensor of plaintexts back into a list of floating-point approximations.
 

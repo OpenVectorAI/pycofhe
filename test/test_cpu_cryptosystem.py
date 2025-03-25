@@ -1,5 +1,7 @@
 """Test the cpu_cryptosystem module."""
 
+from __future__ import annotations
+
 import pytest
 
 from pycofhe.cpu_cryptosystem import (
