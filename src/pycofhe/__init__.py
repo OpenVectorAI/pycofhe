@@ -5,7 +5,7 @@ from __future__ import annotations
 import pycofhe.nn
 import pycofhe.utils
 
-import pycofhe.cpu_cryptosystem
+import pycofhe.cryptosystems
 import pycofhe.network
 import pycofhe.tensor
 

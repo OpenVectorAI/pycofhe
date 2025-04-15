@@ -4,20 +4,36 @@ from __future__ import annotations
 
 from typing import List, overload
 
-from pycofhe.cpu_cryptosystem import CPUCryptoSystem, PublicKey, CipherText
-from pycofhe.network import CPUCryptoSystemClientNode
+from pycofhe.cryptosystems.cryptosystem import (
+    CryptoSystem,
+    SecretKey,
+    SecretKeyShare,
+    PublicKey,
+    PlainText,
+    CipherText,
+    PartialDecryptionResult
+)
+from pycofhe.network.reencryptor import PKCEncryptor
+from pycofhe.network.network_core import ClientNode
 
 # pylint: disable=unused-argument,unnecessary-ellipsis
 
 def encrypt_bit(
-    cs: CPUCryptoSystem,
+    cs: CryptoSystem[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult
+    ],
     pk: PublicKey,
     plaintext: int,
 ) -> CipherText:
     """Encrypt the given plaintext using binary encoding scheme.
 
     Args:
-        cs (CPUCryptoSystem): The cryptosystem to use.
+        cs (CryptoSystem): The cryptosystem to use.
         pk (PublicKey): The public key to use.
         plaintext (int): The plaintext bit to encrypt.
 
@@ -27,13 +43,21 @@ def encrypt_bit(
     ...
 
 def decrypt_bit(
-    cs: CPUCryptoSystemClientNode,
+    cs: ClientNode[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+        PKCEncryptor,
+    ],
     ciphertext: CipherText,
 ) -> int:
     """Decrypt the given ciphertext using binary encoding scheme.
 
     Args:
-        cs (CPUCryptoSystemClientNode): The cryptosystem to use.
+        cs (ClientNode): The cryptosystem to use.
         ciphertext (Ciphertext): The ciphertext bit to decrypt.
 
     Returns:
@@ -42,14 +66,21 @@ def decrypt_bit(
     ...
 
 def encrypt_bitwise(
-    cs: CPUCryptoSystem,
+    cs: CryptoSystem[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+    ],
     pk: PublicKey,
     plaintext: int,
 ) -> List[CipherText]:
     """Encrypt the given plaintext using binary encoding scheme.
 
     Args:
-        cs (CPUCryptoSystem): The cryptosystem to use.
+        cs (CryptoSystem): The cryptosystem to use.
         pk (PublicKey): The public key to use.
         plaintext (int): The plaintext to encrypt.
 
@@ -59,13 +90,21 @@ def encrypt_bitwise(
     ...
 
 def decrypt_bitwise(
-    cs: CPUCryptoSystemClientNode,
+    cs: ClientNode[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+        PKCEncryptor,
+    ],
     ciphertext: List[CipherText],
 ) -> int:
     """Decrypt the given ciphertext using binary encoding scheme.
 
     Args:
-        cs (CPUCryptoSystemClientNode): The cryptosystem to use.
+        cs (ClientNode): The cryptosystem to use.
         ciphertext (List[Ciphertext]): The ciphertext to decrypt.
 
     Returns:
@@ -75,12 +114,21 @@ def decrypt_bitwise(
 
 @overload
 def homomorphic_not(
-    client_node: CPUCryptoSystemClientNode, ct: CipherText
+    client_node: ClientNode[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+        PKCEncryptor,
+    ],
+    ct: CipherText,
 ) -> CipherText:
     """Perform homomorphic NOT operation on the given ciphertext.
 
     Args:
-        client_node (CPUCryptoSystemClientNode): The client node.
+        client_node (ClientNode): The client node.
         ct (Ciphertext): The ciphertext.
 
     Returns:
@@ -90,13 +138,21 @@ def homomorphic_not(
 
 @overload
 def homomorphic_not(
-    client_node: CPUCryptoSystemClientNode,
+    client_node: ClientNode[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+        PKCEncryptor,
+    ],
     ct: List[CipherText],
 ) -> List[CipherText]:
     """Perform homomorphic NOT operation on the given ciphertext.
 
     Args:
-        client_node (CPUCryptoSystemClientNode): The client node.
+        client_node (ClientNode): The client node.
         ct (List[CipherText]): The ciphertext.
 
     Returns:
@@ -106,14 +162,22 @@ def homomorphic_not(
 
 @overload
 def homomorphic_and(
-    client_node: CPUCryptoSystemClientNode,
+    client_node: ClientNode[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+        PKCEncryptor,
+    ],
     ct1: List[CipherText],
     ct2: List[CipherText],
 ) -> List[CipherText]:
     """Perform homomorphic AND operation on the given ciphertexts.
 
     Args:
-        client_node (CPUCryptoSystemClientNode): The client node.
+        client_node (ClientNode): The client node.
         ct1 (List[CipherText]): The first ciphertext.
         ct2 (List[CipherText]): The second ciphertext.
 
@@ -124,14 +188,22 @@ def homomorphic_and(
 
 @overload
 def homomorphic_and(
-    client_node: CPUCryptoSystemClientNode,
+    client_node: ClientNode[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+        PKCEncryptor,
+    ],
     ct1: CipherText,
     ct2: CipherText,
 ) -> CipherText:
     """Perform homomorphic AND operation on the given ciphertexts.
 
     Args:
-        client_node (CPUCryptoSystemClientNode): The client node.
+        client_node (ClientNode): The client node.
         ct1 (Ciphertext): The first ciphertext.
         ct2 (Ciphertext): The second ciphertext.
 
@@ -142,14 +214,22 @@ def homomorphic_and(
 
 @overload
 def homomorphic_or(
-    client_node: CPUCryptoSystemClientNode,
+    client_node: ClientNode[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+        PKCEncryptor,
+    ],
     ct1: CipherText,
     ct2: CipherText,
 ) -> CipherText:
     """Perform homomorphic OR operation on the given ciphertexts.
 
     Args:
-        client_node (CPUCryptoSystemClientNode): The client node.
+        client_node (ClientNode): The client node.
         ct1 (Ciphertext): The first ciphertext.
         ct2 (Ciphertext): The second ciphertext.
 
@@ -160,14 +240,22 @@ def homomorphic_or(
 
 @overload
 def homomorphic_or(
-    client_node: CPUCryptoSystemClientNode,
+    client_node: ClientNode[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+        PKCEncryptor,
+    ],
     ct1: List[CipherText],
     ct2: List[CipherText],
 ) -> List[CipherText]:
     """Perform homomorphic OR operation on the given ciphertexts.
 
     Args:
-        client_node (CPUCryptoSystemClientNode): The client node.
+        client_node (ClientNode): The client node.
         ct1 (List[CipherText]): The first ciphertext.
         ct2 (List[CipherText]): The second ciphertext.
 
@@ -178,14 +266,22 @@ def homomorphic_or(
 
 @overload
 def homomorphic_xor(
-    client_node: CPUCryptoSystemClientNode,
+    client_node: ClientNode[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+        PKCEncryptor,
+    ],
     ct1: CipherText,
     ct2: CipherText,
 ) -> CipherText:
     """Perform homomorphic XOR operation on the given ciphertexts.
 
     Args:
-        client_node (CPUCryptoSystemClientNode): The client node.
+        client_node (ClientNode): The client node.
         ct1 (Ciphertext): The first ciphertext.
         ct2 (Ciphertext): The second ciphertext.
 
@@ -196,14 +292,22 @@ def homomorphic_xor(
 
 @overload
 def homomorphic_xor(
-    client_node: CPUCryptoSystemClientNode,
+    client_node: ClientNode[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+        PKCEncryptor,
+    ],
     ct1: List[CipherText],
     ct2: List[CipherText],
 ) -> List[CipherText]:
     """Perform homomorphic XOR operation on the given ciphertexts.
 
     Args:
-        client_node (CPUCryptoSystemClientNode): The client node.
+        client_node (ClientNode): The client node.
         ct1 (List[CipherText]): The first ciphertext.
         ct2 (List[CipherText]): The second ciphertext.
 
@@ -213,14 +317,22 @@ def homomorphic_xor(
     ...
 
 def homomorphic_nand(
-    client_node: CPUCryptoSystemClientNode,
+    client_node: ClientNode[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+        PKCEncryptor,
+    ],
     ct1: CipherText,
     ct2: CipherText,
 ) -> CipherText:
     """Perform homomorphic NAND operation on the given ciphertexts.
 
     Args:
-        client_node (CPUCryptoSystemClientNode): The client node.
+        client_node (ClientNode): The client node.
         ct1 (Ciphertext): The first ciphertext.
         ct2 (Ciphertext): The second ciphertext.
 
@@ -230,14 +342,22 @@ def homomorphic_nand(
     ...
 
 def homomorphic_add(
-    client_node: CPUCryptoSystemClientNode,
+    client_node: ClientNode[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+        PKCEncryptor,
+    ],
     ct1: List[CipherText],
     ct2: List[CipherText],
 ) -> List[CipherText]:
     """Perform homomorphic ADD operation on the given ciphertexts.
 
     Args:
-        client_node (CPUCryptoSystemClientNode): The client node.
+        client_node (ClientNode): The client node.
         ct1 (List[CipherText]): The first ciphertext.
         ct2 (List[CipherText]): The second ciphertext.
 
@@ -247,14 +367,22 @@ def homomorphic_add(
     ...
 
 def homomorphic_sub(
-    client_node: CPUCryptoSystemClientNode,
+    client_node: ClientNode[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+        PKCEncryptor,
+    ],
     ct1: List[CipherText],
     ct2: List[CipherText],
 ) -> List[CipherText]:
     """Perform homomorphic SUB operation on the given ciphertexts.
 
     Args:
-        client_node (CPUCryptoSystemClientNode): The client node.
+        client_node (ClientNode): The client node.
         ct1 (List[CipherText]): The first ciphertext.
         ct2 (List[CipherText]): The second ciphertext.
 
@@ -264,14 +392,22 @@ def homomorphic_sub(
     ...
 
 def homomorphic_lt(
-    client_node: CPUCryptoSystemClientNode,
+    client_node: ClientNode[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+        PKCEncryptor,
+    ],
     ct1: List[CipherText],
     ct2: List[CipherText],
 ) -> CipherText:
     """Perform homomorphic LT operation on the given ciphertexts.
 
     Args:
-        client_node (CPUCryptoSystemClientNode): The client node.
+        client_node (ClientNode): The client node.
         ct1 (List[CipherText]): The first ciphertext.
         ct2 (List[CipherText]): The second ciphertext.
 
@@ -281,14 +417,22 @@ def homomorphic_lt(
     ...
 
 def homomorphic_eq(
-    client_node: CPUCryptoSystemClientNode,
+    client_node: ClientNode[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+        PKCEncryptor,
+    ],
     ct1: List[CipherText],
     ct2: List[CipherText],
 ) -> CipherText:
     """Perform homomorphic EQ operation on the given ciphertexts.
 
     Args:
-        client_node (CPUCryptoSystemClientNode): The client node.
+        client_node (ClientNode): The client node.
         ct1 (List[CipherText]): The first ciphertext.
         ct2 (List[CipherText]): The second ciphertext.
 
@@ -298,14 +442,22 @@ def homomorphic_eq(
     ...
 
 def homomorphic_gt(
-    client_node: CPUCryptoSystemClientNode,
+    client_node: ClientNode[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+        PKCEncryptor,
+    ],
     ct1: List[CipherText],
     ct2: List[CipherText],
 ) -> CipherText:
     """Perform homomorphic GT operation on the given ciphertexts.
 
     Args:
-        client_node (CPUCryptoSystemClientNode): The client node.
+        client_node (ClientNode): The client node.
         ct1 (List[CipherText]): The first ciphertext.
         ct2 (List[CipherText]): The second ciphertext.
 
@@ -315,29 +467,43 @@ def homomorphic_gt(
     ...
 
 def serialize_bit(
-    cs: CPUCryptoSystem,
+    cs: CryptoSystem[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+    ],
     ciphertext: CipherText,
-) -> str:
+) -> bytes:
     """Serialize the given ciphertext using binary encoding scheme.
 
     Args:
-        cs (CPUCryptoSystem): The cryptosystem to use.
+        cs (CryptoSystem): The cryptosystem to use.
         ciphertext (Ciphertext): The ciphertext to serialize.
 
     Returns:
-        str: The serialized ciphertext.
+        bytes: The serialized ciphertext.
     """
     ...
 
 def deserialize_bit(
-    cs: CPUCryptoSystem,
-    serialized: str,
+    cs: CryptoSystem[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+    ],
+    serialized: bytes,
 ) -> CipherText:
     """Deserialize the given ciphertext using binary encoding scheme.
 
     Args:
-        cs (CPUCryptoSystem): The cryptosystem to use.
-        serialized (str): The serialized ciphertext.
+        cs (CryptoSystem): The cryptosystem to use.
+        serialized (bytes): The serialized ciphertext.
 
     Returns:
         Ciphertext: The deserialized ciphertext.
@@ -345,29 +511,43 @@ def deserialize_bit(
     ...
 
 def serialize_bitwise(
-    cs: CPUCryptoSystem,
+    cs: CryptoSystem[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+    ],
     ciphertext: List[CipherText],
-) -> str:
+) -> bytes:
     """Serialize the given ciphertext using binary encoding scheme.
 
     Args:
-        cs (CPUCryptoSystem): The cryptosystem to use.
+        cs (CryptoSystem): The cryptosystem to use.
         ciphertext (List[CipherText]): The ciphertext to serialize.
 
     Returns:
-        str: The serialized ciphertexts.
+        bytes: The serialized ciphertexts.
     """
     ...
 
 def deserialize_bitwise(
-    cs: CPUCryptoSystem,
-    serialized: str,
+    cs: CryptoSystem[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult
+    ],
+    serialized: bytes,
 ) -> List[CipherText]:
     """Deserialize the given ciphertext using binary encoding scheme.
 
     Args:
-        cs (CPUCryptoSystem): The cryptosystem to use.
-        serialized (str): The serialized ciphertext.
+        cs (CryptoSystem): The cryptosystem to use.
+        serialized (bytes): The serialized ciphertext.
 
     Returns:
         List[CipherText]: The deserialized ciphertexts.

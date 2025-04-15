@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import pytest
-
+from dotenv import dotenv_values
 
 from pycofhe.network import (
     ComputeOperation,
@@ -15,8 +14,14 @@ from pycofhe.network import (
     ComputeResponseStatus,
     DataEncryptionType,
     DataType,
-    perform_tensor_op,
-    perform_tensor_decryption,
+    make_cpu_cryptosystem_client_node,
+    NodeType,
+    NodeDetails,
+    CryptoSystemType,
+    CryptoSystemDetails,
+    ReencryptorType,
+    ReencryptorDetails,
+    NetworkDetails
 )
 
 def test_compute_response():
@@ -95,7 +100,7 @@ def test_compute_request():
 
 def test_client_node_multiply(client_node):
     """
-    Test a homomorphic multiply and decrypt sequence using a CPUCryptoSystemClientNode.
+    Test a homomorphic multiply and decrypt sequence using a ClientNode.
     """
     cs = client_node.cryptosystem
     pk = client_node.network_encryption_key
@@ -140,20 +145,40 @@ def test_client_node_multiply(client_node):
     #   multiply => [5*5, 192*6, 21*7, 32*8] = [25, 1152, 147, 256]
     assert float_res == [25.0, 1152.0, 147.0, 256.0]
 
+def test_non_connected_client_node(client_node):
+    real_nd = client_node.network_details
+    self_node = NodeDetails(
+        "127.0.0.1",
+        "4478",
+        NodeType.CLIENT_NODE,
+    )
+    cryptosystem_details = CryptoSystemDetails(
+        CryptoSystemType.CoFHE_CPU,
+        real_nd.cryptosystem_details.public_key,
+        real_nd.cryptosystem_details.security_level,
+        real_nd.cryptosystem_details.k,
+        real_nd.cryptosystem_details.threshold,
+        real_nd.cryptosystem_details.total_nodes
+    )
+    nodes:list[NodeDetails] = []
+    reencryptor = ReencryptorDetails(
+        ReencryptorType.RSA,
+        2048)
+    nd = NetworkDetails(
+        self_node,
+        nodes,
+        cryptosystem_details,
+        [],
+        reencryptor,
+    )
+    env_vars = dotenv_values(".env")
+    cert_path = env_vars.get("CERT_PATH")
+    if cert_path is None:
+        raise ValueError("CERT_PATH not found in environment variables.")
+    client_node = make_cpu_cryptosystem_client_node(
+        nd,
+        cert_path,
+    )
 
-def test_util_funcs(client_node):
-    """
-    Test a homomorphic multiply and decrypt sequence using a CPUCryptoSystemClientNode.
-    """
     cs = client_node.cryptosystem
-    pk = client_node.network_encryption_key
-
-    c1 = cs.encrypt_tensor(pk, cs.make_plaintext_tensor([4], [1, 2**5, 3, 4]))
-    p1 = cs.make_plaintext_tensor([4], [5, 6, 7, 8])
-
-    res = perform_tensor_op(client_node, ComputeOperation.MULTIPLY, c1, p1)
-    dres = perform_tensor_decryption(client_node, res)
-
-    float_res = cs.get_float_from_plaintext_tensor(dres)
-
-    assert float_res == [5.0, 192.0, 21.0, 32.0]
+    re = client_node.reencryptor

@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import pytest
 
-from pycofhe.cpu_cryptosystem import (
-    CipherText,
+from pycofhe.cryptosystems import (
+    CPUCryptoSystemCipherText,
     CPUCryptoSystem,
-    PlainText,
-    PublicKey,
-    SecretKey,
+    CPUCryptoSystemPlainText,
+    CPUCryptoSystemPublicKey,
+    CPUCryptoSystemSecretKey,
 )
 
 
@@ -24,23 +24,23 @@ def ccs():
 
 def test_keygen_secret_key(ccs):
     """
-    Test generating a fresh SecretKey from CPUCryptoSystem.
+    Test generating a fresh CPUCryptoSystemSecretKey from CPUCryptoSystem.
     """
     sk = ccs.keygen()
     assert isinstance(
-        sk, SecretKey
-    ), "keygen() did not return a SecretKey instance."
+        sk, CPUCryptoSystemSecretKey
+    ), "keygen() did not return a CPUCryptoSystemSecretKey instance."
 
 
 def test_keygen_public_key(ccs):
     """
-    Test generating a PublicKey from an existing SecretKey.
+    Test generating a CPUCryptoSystemPublicKey from an existing CPUCryptoSystemSecretKey.
     """
     sk = ccs.keygen()
     pk = ccs.keygen(sk)
     assert isinstance(
-        pk, PublicKey
-    ), "keygen(SecretKey) did not return a PublicKey instance."
+        pk, CPUCryptoSystemPublicKey
+    ), "keygen(CPUCryptoSystemSecretKey) did not return a CPUCryptoSystemPublicKey instance."
 
 
 def test_encrypt_decrypt_int_round_trip(ccs):
@@ -54,12 +54,12 @@ def test_encrypt_decrypt_int_round_trip(ccs):
     pt = ccs.make_plaintext(original_value)
 
     ct = ccs.encrypt(pk, pt)
-    assert isinstance(ct, CipherText), "encrypt() did not return a CipherText."
+    assert isinstance(ct, CPUCryptoSystemCipherText), "encrypt() did not return a CPUCryptoSystemCipherText."
 
     decrypted_pt = ccs.decrypt(sk, ct)
     assert isinstance(
-        decrypted_pt, PlainText
-    ), "decrypt() did not return a PlainText."
+        decrypted_pt, CPUCryptoSystemPlainText
+    ), "decrypt() did not return a CPUCryptoSystemPlainText."
 
     decrypted_value = ccs.get_float_from_plaintext(decrypted_pt)
 
@@ -83,8 +83,8 @@ def test_add_ciphertexts_int(ccs):
 
     ct_sum = ccs.add_ciphertexts(pk, ct1, ct2)
     assert isinstance(
-        ct_sum, CipherText
-    ), "add_ciphertexts() did not return a CipherText."
+        ct_sum, CPUCryptoSystemCipherText
+    ), "add_ciphertexts() did not return a CPUCryptoSystemCipherText."
 
     pt_sum = ccs.decrypt(sk, ct_sum)
     decrypted_sum = ccs.get_float_from_plaintext(pt_sum)
@@ -106,8 +106,8 @@ def test_scal_ciphertext_int(ccs):
     scalar = ccs.make_plaintext(7)
     ct_scaled = ccs.scal_ciphertext(pk, scalar, ct)
     assert isinstance(
-        ct_scaled, CipherText
-    ), "scal_ciphertext() did not return a CipherText."
+        ct_scaled, CPUCryptoSystemCipherText
+    ), "scal_ciphertext() did not return a CPUCryptoSystemCipherText."
 
     pt_scaled = ccs.decrypt(sk, ct_scaled)
     decrypted_scaled = ccs.get_float_from_plaintext(pt_scaled)
@@ -176,23 +176,23 @@ def test_serialize_deserialize_system(ccs):
 
 def test_serialize_deserialize_keys_int(ccs):
     """
-    Test serializing and deserializing SecretKey and PublicKey using integer-based cryptosystem usage.
+    Test serializing and deserializing CPUCryptoSystemSecretKey and CPUCryptoSystemPublicKey using integer-based cryptosystem usage.
     """
     sk = ccs.keygen()
     pk = ccs.keygen(sk)
 
     sk_data = ccs.serialize_secret_key(sk)
     sk_new = ccs.deserialize_secret_key(sk_data)
-    assert isinstance(sk_new, SecretKey), "Failed to deserialize SecretKey."
+    assert isinstance(sk_new, CPUCryptoSystemSecretKey), "Failed to deserialize CPUCryptoSystemSecretKey."
 
     pk_data = ccs.serialize_public_key(pk)
     pk_new = ccs.deserialize_public_key(pk_data)
-    assert isinstance(pk_new, PublicKey), "Failed to deserialize PublicKey."
+    assert isinstance(pk_new, CPUCryptoSystemPublicKey), "Failed to deserialize CPUCryptoSystemPublicKey."
 
 
 def test_serialize_deserialize_plaintext_int(ccs):
     """
-    Test serializing and deserializing a PlainText that contains an integer value.
+    Test serializing and deserializing a CPUCryptoSystemPlainText that contains an integer value.
     """
     pt_val = ccs.make_plaintext(123)
     pt_data = ccs.serialize_plaintext(pt_val)
@@ -201,12 +201,12 @@ def test_serialize_deserialize_plaintext_int(ccs):
     recovered_val = ccs.get_float_from_plaintext(pt_new)
     assert (
         abs(recovered_val - 123) < 1e-6
-    ), f"Deserialized PlainText value mismatch: got {recovered_val}"
+    ), f"Deserialized CPUCryptoSystemPlainText value mismatch: got {recovered_val}"
 
 
 def test_serialize_deserialize_ciphertext_int(ccs):
     """
-    Test serializing and deserializing a CipherText that encrypts an integer value.
+    Test serializing and deserializing a CPUCryptoSystemCipherText that encrypts an integer value.
     """
     sk = ccs.keygen()
     pk = ccs.keygen(sk)
@@ -222,7 +222,7 @@ def test_serialize_deserialize_ciphertext_int(ccs):
     recovered_val = ccs.get_float_from_plaintext(pt_recovered)
     assert (
         abs(recovered_val - 999) < 1e-6
-    ), f"Deserialized CipherText value mismatch: got {recovered_val}"
+    ), f"Deserialized CPUCryptoSystemCipherText value mismatch: got {recovered_val}"
 
 
 def test_encrypt_decrypt_tensor_int(ccs):
@@ -264,7 +264,7 @@ def test_serialize_deserialize_plaintext_tensor_int(ccs):
     new_vals = ccs.get_float_from_plaintext_tensor(pt_tensor_new)
     assert (
         original_vals == new_vals
-    ), f"Deserialized PlainText tensor mismatch: {new_vals} != {original_vals}"
+    ), f"Deserialized CPUCryptoSystemPlainText tensor mismatch: {new_vals} != {original_vals}"
 
 
 def test_serialize_deserialize_ciphertext_tensor_int(ccs):
@@ -283,9 +283,9 @@ def test_serialize_deserialize_ciphertext_tensor_int(ccs):
 
     pt_tensor_new = ccs.decrypt_tensor(sk, ct_tensor_new)
     new_vals = ccs.get_float_from_plaintext_tensor(pt_tensor_new)
-    assert len(values) == len(new_vals), "CipherText tensor length mismatch."
+    assert len(values) == len(new_vals), "CPUCryptoSystemCipherText tensor length mismatch."
 
     for orig, dec in zip(values, new_vals):
         assert (
             abs(dec - orig) < 1e-6
-        ), f"Deserialized CipherText tensor mismatch: got {dec} != {orig}"
+        ), f"Deserialized CPUCryptoSystemCipherText tensor mismatch: got {dec} != {orig}"

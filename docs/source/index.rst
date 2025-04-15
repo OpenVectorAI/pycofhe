@@ -9,6 +9,8 @@ Welcome to the pycofhe documentation. This documentation is intended to help you
    :template: custom-module-template.rst
    :recursive:
 
-   pycofhe.tensor
-   pycofhe.cpu_cryptosystem
+   pycofhe.cryptosystems
    pycofhe.network
+   pycofhe.nn
+   pycofhe.tensor
+   pycofhe.utils

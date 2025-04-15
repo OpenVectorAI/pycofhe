@@ -6,8 +6,10 @@ import pytest
 
 import random
 
+from pycofhe.nn.tensor_type import TensorType
 from pycofhe.tensor import Tensor
 from pycofhe.nn import Module, Linear
+
 
 def test_module():
     """Test the Module class."""
@@ -15,17 +17,22 @@ def test_module():
         Module()
 
 
-def get_random_tensor(size: tuple[int, int], is_int: bool = False, max: int = 256, min: int =16) -> Tensor:
+def get_random_tensor(
+    size: tuple[int, int], is_int: bool = False, max: int = 256, min: int = 16
+) -> Tensor:
     """Get a random tensor."""
-    tensor_values: list[float]|list[int] = []
-    for _ in range(size[0]*size[1]):
+    tensor_values: list[float] | list[int] = []
+    for _ in range(size[0] * size[1]):
         if is_int:
             tensor_values.append(random.randint(min, max))
         else:
             tensor_values.append(random.uniform(min, max))
     return Tensor(size, tensor_values)
 
-def linear_in_plaintext(input_tensor: Tensor, weights: Tensor, bias: Tensor | None = None) -> Tensor:
+
+def linear_in_plaintext(
+    input_tensor: Tensor, weights: Tensor, bias: Tensor | None = None
+) -> Tensor:
     """Perform a linear operation in plaintext.
 
     Args:
@@ -40,7 +47,9 @@ def linear_in_plaintext(input_tensor: Tensor, weights: Tensor, bias: Tensor | No
     I_weights, O = weights.shape
 
     # Validate dimensions
-    assert I == I_weights, "Input tensor's second dimension must match weights' first dimension."
+    assert (
+        I == I_weights
+    ), "Input tensor's second dimension must match weights' first dimension."
 
     # Initialize output tensor values
     output_tensor_values = []
@@ -51,17 +60,22 @@ def linear_in_plaintext(input_tensor: Tensor, weights: Tensor, bias: Tensor | No
         for o in range(O):
             output_value = 0
             for j in range(I):
-                output_value += input_tensor[[i,j]] * weights[[j,o]]
+                output_value += input_tensor[[i, j]] * weights[[j, o]]
             if bias is not None:
                 # Broadcast the bias if needed
-                output_value += bias[[0,o]]
+                output_value += bias[[0, o]]
             output_row.append(output_value)
         output_tensor_values.append(output_row)
 
-    flattended_output_tensor_values = [value for row in output_tensor_values for value in row]
+    flattended_output_tensor_values = [
+        value for row in output_tensor_values for value in row
+    ]
     return Tensor((n, O), flattended_output_tensor_values)
 
-def compare_tensors(tensor1: Tensor, tensor2: Tensor, tolerance: float = 0.1) -> bool:
+
+def compare_tensors(
+    tensor1: Tensor, tensor2: Tensor, tolerance: float = 0.1
+) -> bool:
     """Compare two tensors.
 
     Args:
@@ -77,12 +91,15 @@ def compare_tensors(tensor1: Tensor, tensor2: Tensor, tolerance: float = 0.1) ->
     tensor1 = tensor1.flatten()
     tensor2 = tensor2.flatten()
     for i in range(tensor1.size):
-        if abs(tensor1[i] - tensor2[i])/100 > tolerance:
+        if abs(tensor1[i] - tensor2[i]) / 100 > tolerance:
             assert False, f"tensor1: {tensor1[i]}, tensor2: {tensor2[i]}"
             return False
     return True
 
-def run_linear(client_node, input_size, output_size, scaling_factor, tolerance, is_int):
+
+def run_linear(
+    client_node, input_size, output_size, scaling_factor, tolerance, is_int
+):
     """Test the Linear class."""
     input_size = 10
     output_size = 5
@@ -90,14 +107,26 @@ def run_linear(client_node, input_size, output_size, scaling_factor, tolerance, 
     bias = get_random_tensor((1, output_size))
     scaling_factor = 10000
 
-    linear = Linear(client_node, input_size, output_size, weights, bias, scaling_factor)
+    linear = Linear(
+        client_node,
+        input_size,
+        output_size,
+        weights,
+        bias,
+        TensorType.Float,
+        TensorType.Float,
+        True,
+        True,
+        scaling_factor,
+    )
 
     input_tensor = get_random_tensor((3, input_size))
-    output_tensor = linear( input_tensor)
+    output_tensor = linear(input_tensor, TensorType.Float)
     output_decrypted = linear.map_back(output_tensor)
     output_tensor_expected = linear_in_plaintext(input_tensor, weights, bias)
 
-    assert compare_tensors(output_decrypted, output_tensor_expected,20)
+    assert compare_tensors(output_decrypted, output_tensor_expected, 20)
+
 
 def test_linear(client_node):
     """Test the Linear class."""
@@ -108,9 +137,13 @@ def test_linear(client_node):
     # Test with integer values
     tolerance = 2
     is_int = True
-    run_linear(client_node, input_size, output_size, scaling_factor, tolerance, is_int)
+    run_linear(
+        client_node, input_size, output_size, scaling_factor, tolerance, is_int
+    )
 
     # Test with float values
-    tolerance=20
+    tolerance = 20
     is_int = False
-    run_linear(client_node, input_size, output_size, scaling_factor, tolerance, is_int)
+    run_linear(
+        client_node, input_size, output_size, scaling_factor, tolerance, is_int
+    )

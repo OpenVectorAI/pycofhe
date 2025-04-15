@@ -1,52 +1,29 @@
-"""Typing stubs for the CPU cryptosystem module"""
+"""Typing stubs for the  cryptosystem module"""
 
 from __future__ import annotations
 
-from typing import List, Union, overload
+from typing import List, TypeVar, Union, overload, Generic
 
 from pycofhe.tensor.tensor_core import GenericTensor
 
-# pylint: disable=unused-argument,unnecessary-ellipsis
+SecretKey = TypeVar("SecretKey")
+SecretKeyShare = TypeVar("SecretKeyShare")
+PublicKey = TypeVar("PublicKey")
+PlainText = TypeVar("PlainText")
+CipherText = TypeVar("CipherText")
+PartialDecryptionResult = TypeVar("PartialDecryptionResult")
 
-class SecretKey:
-    """Represents a secret key."""
-
-    pass
-
-class SecretKeyShare:
-    """Represents a share of a secret key."""
-
-    pass
-
-PlainText = SecretKeyShare
-"""Alias for SecretKeyShare representing plaintext."""
-
-class PublicKey:
-    """Represents a public key."""
-
-    pass
-
-class CipherText:
-    """Represents a ciphertext."""
-
-    pass
-
-class PartDecryptionResult:
-    """Represents a partial decryption result."""
-
-    pass
-
-CPUCryptoSystemPlainTextTensor = GenericTensor[PlainText]
-"""Alias for CPUCryptoSystemPlainTextTensor representing a tensor of plaintexts."""
-
-CPUCryptoSystemCipherTextTensor = GenericTensor[CipherText]
-"""Alias for CPUCryptoSystemCipherTextTensor representing a tensor of ciphertexts."""
-
-CPUCryptoSystemPartDecryptionResultTensor = GenericTensor[PartDecryptionResult]
-"""Alias for CPUCryptoSystemPartDecryptionResultTensor representing a tensor of partial decryption results."""
-
-class CPUCryptoSystem:
-    """Python binding for CoFHE CPU cryptosystem."""
+class CryptoSystem(
+    Generic[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+    ]
+):
+    """Python binding for CoFHE cryptosystem."""
 
     def __init__(
         self, security_level: int, k: int, compact: bool = False
@@ -120,17 +97,17 @@ class CPUCryptoSystem:
         ...
 
     def encrypt_tensor(
-        self, pk: PublicKey, pt_tensor: CPUCryptoSystemPlainTextTensor
-    ) -> CPUCryptoSystemCipherTextTensor:
+        self, pk: PublicKey, pt_tensor: GenericTensor[PlainText]
+    ) -> GenericTensor[CipherText]:
         """
         Encrypt a tensor of plaintexts using the given public key.
 
         Args:
             pk (PublicKey): The public key.
-            pt_tensor (CPUCryptoSystemPlainTextTensor): The tensor of plaintexts.
+            pt_tensor (GenericTensor[PlainText]): The tensor of plaintexts.
 
         Returns:
-            CPUCryptoSystemCipherTextTensor: The tensor of ciphertexts.
+            GenericTensor[CipherText]: The tensor of ciphertexts.
         """
         ...
 
@@ -148,23 +125,23 @@ class CPUCryptoSystem:
         ...
 
     def decrypt_tensor(
-        self, sk: SecretKey, ct_tensor: CPUCryptoSystemCipherTextTensor
-    ) -> CPUCryptoSystemPlainTextTensor:
+        self, sk: SecretKey, ct_tensor: GenericTensor[CipherText]
+    ) -> GenericTensor[PlainText]:
         """
         Decrypt a tensor of ciphertexts using the given secret key.
 
         Args:
             sk (SecretKey): The secret key.
-            ct_tensor (CPUCryptoSystemCipherTextTensor): The tensor of ciphertexts.
+            ct_tensor (GenericTensor[CipherText]): The tensor of ciphertexts.
 
         Returns:
-            CPUCryptoSystemPlainTextTensor: The tensor of plaintexts.
+            GenericTensor[PlainText]: The tensor of plaintexts.
         """
         ...
 
     def part_decrypt(
         self, sks: List[SecretKeyShare], ct: CipherText
-    ) -> PartDecryptionResult:
+    ) -> PartialDecryptionResult:
         """
         Perform partial decryption given secret key shares and a ciphertext.
 
@@ -173,56 +150,56 @@ class CPUCryptoSystem:
             ct (CipherText): The ciphertext.
 
         Returns:
-            PartDecryptionResult: The partial decryption result.
+            PartialDecryptionResult: The partial decryption result.
         """
         ...
 
     def part_decrypt_tensor(
         self,
         sks: List[SecretKeyShare],
-        ct_tensor: CPUCryptoSystemCipherTextTensor,
-    ) -> CPUCryptoSystemPartDecryptionResultTensor:
+        ct_tensor: GenericTensor[CipherText],
+    ) -> GenericTensor[PartialDecryptionResult]:
         """
         Perform partial decryption on a tensor of ciphertexts.
 
         Args:
             sks (List[SecretKeyShare]): The list of secret key shares.
-            ct_tensor (CPUCryptoSystemCipherTextTensor): The tensor of ciphertexts.
+            ct_tensor (GenericTensor[CipherText]): The tensor of ciphertexts.
 
         Returns:
-            CPUCryptoSystemPartDecryptionResultTensor: The tensor of partial decryption results.
+            GenericTensor[PartialDecryptionResult]: The tensor of partial decryption results.
         """
         ...
 
-    def combine_part_decryption_results(
-        self, ct: CipherText, pdrs: List[PartDecryptionResult]
+    def combine_partial_decryption_results(
+        self, ct: CipherText, pdrs: List[PartialDecryptionResult]
     ) -> PlainText:
         """
         Combine partial decryption results to recover the plaintext.
 
         Args:
             ct (CipherText): The ciphertext.
-            pdrs (List[PartDecryptionResult]): The list of partial decryption results.
+            pdrs (List[PartialDecryptionResult]): The list of partial decryption results.
 
         Returns:
             PlainText: The plaintext.
         """
         ...
 
-    def combine_part_decryption_results_tensor(
+    def combine_partial_decryption_results_tensor(
         self,
         ct: CipherText,
-        pdrs: List[CPUCryptoSystemPartDecryptionResultTensor],
-    ) -> CPUCryptoSystemPlainTextTensor:
+        pdrs: List[GenericTensor[PartialDecryptionResult]],
+    ) -> GenericTensor[PlainText]:
         """
         Combine partial decryption results on a tensor of ciphertexts.
 
         Args:
             ct (CipherText): The ciphertext.
-            pdrs (List[CPUCryptoSystemPartDecryptionResultTensor]): The list of tensors of partial decryption results.
+            pdrs (List[GenericTensor[PartialDecryptionResult]]): The list of tensors of partial decryption results.
 
         Returns:
-            CPUCryptoSystemPlainTextTensor: The tensor of plaintexts.
+            GenericTensor[PlainText]: The tensor of plaintexts.
         """
         ...
 
@@ -261,38 +238,38 @@ class CPUCryptoSystem:
     def add_ciphertext_tensors(
         self,
         pk: PublicKey,
-        ct1: CPUCryptoSystemCipherTextTensor,
-        ct2: CPUCryptoSystemCipherTextTensor,
-    ) -> CPUCryptoSystemCipherTextTensor:
+        ct1: GenericTensor[CipherText],
+        ct2: GenericTensor[CipherText],
+    ) -> GenericTensor[CipherText]:
         """
         Homomorphically add two tensors of ciphertexts.
 
         Args:
             pk (PublicKey): The public key.
-            ct1 (CPUCryptoSystemCipherTextTensor): The first tensor of ciphertexts.
-            ct2 (CPUCryptoSystemCipherTextTensor): The second tensor of ciphertexts.
+            ct1 (GenericTensor[CipherText]): The first tensor of ciphertexts.
+            ct2 (GenericTensor[CipherText]): The second tensor of ciphertexts.
 
         Returns:
-            CPUCryptoSystemCipherTextTensor: The resulting tensor of ciphertexts.
+            GenericTensor[CipherText]: The resulting tensor of ciphertexts.
         """
         ...
 
     def scal_ciphertext_tensors(
         self,
         pk: PublicKey,
-        pt_tensor: CPUCryptoSystemPlainTextTensor,
-        ct_tensor: CPUCryptoSystemCipherTextTensor,
-    ) -> CPUCryptoSystemCipherTextTensor:
+        pt_tensor: GenericTensor[PlainText],
+        ct_tensor: GenericTensor[CipherText],
+    ) -> GenericTensor[CipherText]:
         """
         Scale (multiply) a tensor of plaintexts by a tensor of ciphertexts.
 
         Args:
             pk (PublicKey): The public key.
-            pt_tensor (CPUCryptoSystemPlainTextTensor): The tensor of plaintexts.
-            ct_tensor (CPUCryptoSystemCipherTextTensor): The tensor of ciphertexts.
+            pt_tensor (GenericTensor[PlainText]): The tensor of plaintexts.
+            ct_tensor (GenericTensor[CipherText]): The tensor of ciphertexts.
 
         Returns:
-            CPUCryptoSystemCipherTextTensor: The resulting tensor of ciphertexts.
+            GenericTensor[CipherText]: The resulting tensor of ciphertexts.
         """
         ...
 
@@ -324,35 +301,35 @@ class CPUCryptoSystem:
 
     def add_plaintext_tensors(
         self,
-        pt1: CPUCryptoSystemPlainTextTensor,
-        pt2: CPUCryptoSystemPlainTextTensor,
-    ) -> CPUCryptoSystemPlainTextTensor:
+        pt1: GenericTensor[PlainText],
+        pt2: GenericTensor[PlainText],
+    ) -> GenericTensor[PlainText]:
         """
         Add two tensors of plaintexts.
 
         Args:
-            pt1 (CPUCryptoSystemPlainTextTensor): The first tensor of plaintexts.
-            pt2 (CPUCryptoSystemPlainTextTensor): The second tensor of plaintexts.
+            pt1 (GenericTensor[PlainText]): The first tensor of plaintexts.
+            pt2 (GenericTensor[PlainText]): The second tensor of plaintexts.
 
         Returns:
-            CPUCryptoSystemPlainTextTensor: The resulting tensor of plaintexts.
+            GenericTensor[PlainText]: The resulting tensor of plaintexts.
         """
         ...
 
     def multiply_plaintext_tensors(
         self,
-        pt1: CPUCryptoSystemPlainTextTensor,
-        pt2: CPUCryptoSystemPlainTextTensor,
-    ) -> CPUCryptoSystemPlainTextTensor:
+        pt1: GenericTensor[PlainText],
+        pt2: GenericTensor[PlainText],
+    ) -> GenericTensor[PlainText]:
         """
         Multiply two tensors of plaintexts.
 
         Args:
-            pt1 (CPUCryptoSystemPlainTextTensor): The first tensor of plaintexts.
-            pt2 (CPUCryptoSystemPlainTextTensor): The second tensor of plaintexts.
+            pt1 (GenericTensor[PlainText]): The first tensor of plaintexts.
+            pt2 (GenericTensor[PlainText]): The second tensor of plaintexts.
 
         Returns:
-            CPUCryptoSystemPlainTextTensor: The resulting tensor of plaintexts.
+            GenericTensor[PlainText]: The resulting tensor of plaintexts.
         """
         ...
 
@@ -369,16 +346,16 @@ class CPUCryptoSystem:
         ...
 
     def negate_plaintext_tensor(
-        self, pt: CPUCryptoSystemPlainTextTensor
-    ) -> CPUCryptoSystemPlainTextTensor:
+        self, pt: GenericTensor[PlainText]
+    ) -> GenericTensor[PlainText]:
         """
         Negate (multiply by -1) a tensor of plaintexts.
 
         Args:
-            pt (CPUCryptoSystemPlainTextTensor): The tensor of plaintexts.
+            pt (GenericTensor[PlainText]): The tensor of plaintexts.
 
         Returns:
-            CPUCryptoSystemPlainTextTensor: The resulting tensor of plaintexts.
+            GenericTensor[PlainText]: The resulting tensor of plaintexts.
         """
         ...
 
@@ -396,17 +373,17 @@ class CPUCryptoSystem:
         ...
 
     def negate_ciphertext_tensor(
-        self, pk: PublicKey, ct: CPUCryptoSystemCipherTextTensor
-    ) -> CPUCryptoSystemCipherTextTensor:
+        self, pk: PublicKey, ct: GenericTensor[CipherText]
+    ) -> GenericTensor[CipherText]:
         """
         Negate (multiply by -1) a tensor of ciphertexts.
 
         Args:
             pk (PublicKey): The public key.
-            ct (CPUCryptoSystemCipherTextTensor): The tensor of ciphertexts.
+            ct (GenericTensor[CipherText]): The tensor of ciphertexts.
 
         Returns:
-            CPUCryptoSystemCipherTextTensor: The resulting tensor of ciphertexts.
+            GenericTensor[CipherText]: The resulting tensor of ciphertexts.
         """
         ...
 
@@ -424,7 +401,7 @@ class CPUCryptoSystem:
 
     def make_plaintext_tensor(
         self, shape: List[int], values: List[float]
-    ) -> CPUCryptoSystemPlainTextTensor:
+    ) -> GenericTensor[PlainText]:
         """
         Convert a list of floats into a tensor of plaintexts.
 
@@ -433,11 +410,13 @@ class CPUCryptoSystem:
             values (List[float]): The list of floating-point values.
 
         Returns:
-            CPUCryptoSystemPlainTextTensor: The tensor of plaintexts corresponding to the values.
+            GenericTensor[PlainText]: The tensor of plaintexts corresponding to the values.
         """
         ...
 
-    def get_float_from_plaintext(self, pt: PlainText, scaling_factor: int=1, depth: int=1) -> float:
+    def get_float_from_plaintext(
+        self, pt: PlainText, scaling_factor: int = 1, depth: int = 1
+    ) -> float:
         """
         Convert a plaintext back into a floating-point approximation.
 
@@ -452,13 +431,16 @@ class CPUCryptoSystem:
         ...
 
     def get_float_from_plaintext_tensor(
-        self, pts: CPUCryptoSystemPlainTextTensor, scaling_factor: int=1, depth: int=1
+        self,
+        pts: GenericTensor[PlainText],
+        scaling_factor: int = 1,
+        depth: int = 1,
     ) -> List[float]:
         """
         Convert a tensor of plaintexts back into a list of floating-point approximations.
 
         Args:
-            pts (CPUCryptoSystemPlainTextTensor): The tensor of plaintexts.
+            pts (GenericTensor[PlainText]): The tensor of plaintexts.
             scaling_factor (int): The scaling factor.
             depth (int): The depth.
 
@@ -477,19 +459,19 @@ class CPUCryptoSystem:
         ...
 
     @staticmethod
-    def deserialize(data: str) -> CPUCryptoSystem:
+    def deserialize(data: str) -> CryptoSystem:
         """
-        Deserialize a CPUCryptoSystem instance from a string.
+        Deserialize a CryptoSystem instance from a string.
 
         Args:
-            data (str): The serialized object.
+            data (bytes): The serialized object.
 
         Returns:
-            CPUCryptoSystem: The deserialized cryptosystem.
+            CryptoSystem: The deserialized cryptosystem.
         """
         ...
 
-    def serialize_secret_key(self, sk: SecretKey) -> str:
+    def serialize_secret_key(self, sk: SecretKey) -> bytes:
         """
         Serialize a SecretKey into a string.
 
@@ -497,11 +479,11 @@ class CPUCryptoSystem:
             sk (SecretKey): The secret key.
 
         Returns:
-            str: The serialized secret key.
+            bytes: The serialized secret key.
         """
         ...
 
-    def deserialize_secret_key(self, data: str) -> SecretKey:
+    def deserialize_secret_key(self, data: bytes) -> SecretKey:
         """
         Deserialize a SecretKey from a string.
 
@@ -513,7 +495,7 @@ class CPUCryptoSystem:
         """
         ...
 
-    def serialize_public_key(self, pk: PublicKey) -> str:
+    def serialize_public_key(self, pk: PublicKey) -> bytes:
         """
         Serialize a PublicKey into a string.
 
@@ -521,23 +503,23 @@ class CPUCryptoSystem:
             pk (PublicKey): The public key.
 
         Returns:
-            str: The serialized public key.
+            bytes: The serialized public key.
         """
         ...
 
-    def deserialize_public_key(self, data: str) -> PublicKey:
+    def deserialize_public_key(self, data: bytes) -> PublicKey:
         """
         Deserialize a PublicKey from a string.
 
         Args:
-            data (str): The serialized public key.
+            data (bytes): The serialized public key.
 
         Returns:
             PublicKey: The deserialized public key.
         """
         ...
 
-    def serialize_plaintext(self, pt: PlainText) -> str:
+    def serialize_plaintext(self, pt: PlainText) -> bytes:
         """
         Serialize a PlainText into a string.
 
@@ -545,23 +527,23 @@ class CPUCryptoSystem:
             pt (PlainText): The plaintext.
 
         Returns:
-            str: The serialized plaintext.
+            bytes: The serialized plaintext.
         """
         ...
 
-    def deserialize_plaintext(self, data: str) -> PlainText:
+    def deserialize_plaintext(self, data: bytes) -> PlainText:
         """
         Deserialize a PlainText from a string.
 
         Args:
-            data (str): The serialized plaintext.
+            data (bytes): The serialized plaintext.
 
         Returns:
             PlainText: The deserialized plaintext.
         """
         ...
 
-    def serialize_ciphertext(self, ct: CipherText) -> str:
+    def serialize_ciphertext(self, ct: CipherText) -> bytes:
         """
         Serialize a CipherText into a string.
 
@@ -569,51 +551,51 @@ class CPUCryptoSystem:
             ct (CipherText): The ciphertext.
 
         Returns:
-            str: The serialized ciphertext.
+            bytes: The serialized ciphertext.
         """
         ...
 
-    def deserialize_ciphertext(self, data: str) -> CipherText:
+    def deserialize_ciphertext(self, data: bytes) -> CipherText:
         """
         Deserialize a CipherText from a string.
 
         Args:
-            data (str): The serialized ciphertext.
+            data (bytes): The serialized ciphertext.
 
         Returns:
             CipherText: The deserialized ciphertext.
         """
         ...
 
-    def serialize_part_decryption_result(
-        self, pdr: PartDecryptionResult
-    ) -> str:
+    def serialize_partial_decryption_result(
+        self, pdr: PartialDecryptionResult
+    ) -> bytes:
         """
-        Serialize a PartDecryptionResult into a string.
+        Serialize a PartialDecryptionResult into a string.
 
         Args:
-            pdr (PartDecryptionResult): The partial decryption result.
+            pdr (PartialDecryptionResult): The partial decryption result.
 
         Returns:
-            str: The serialized partial decryption result.
+            bytes: The serialized partial decryption result.
         """
         ...
 
-    def deserialize_part_decryption_result(
-        self, data: str
-    ) -> PartDecryptionResult:
+    def deserialize_partial_decryption_result(
+        self, data: bytes
+    ) -> PartialDecryptionResult:
         """
-        Deserialize a PartDecryptionResult from a string.
+        Deserialize a PartialDecryptionResult from a string.
 
         Args:
-            data (str): The serialized partial decryption result.
+            data (bytes): The serialized partial decryption result.
 
         Returns:
-            PartDecryptionResult: The deserialized partial decryption result.
+            PartialDecryptionResult: The deserialized partial decryption result.
         """
         ...
 
-    def serialize_secret_key_share(self, sks: SecretKeyShare) -> str:
+    def serialize_secret_key_share(self, sks: SecretKeyShare) -> bytes:
         """
         Serialize a SecretKeyShare into a string.
 
@@ -621,16 +603,16 @@ class CPUCryptoSystem:
             sks (SecretKeyShare): The secret key share.
 
         Returns:
-            str: The serialized secret key share.
+            bytes: The serialized secret key share.
         """
         ...
 
-    def deserialize_secret_key_share(self, data: str) -> SecretKeyShare:
+    def deserialize_secret_key_share(self, data: bytes) -> SecretKeyShare:
         """
         Deserialize a SecretKeyShare from a string.
 
         Args:
-            data (str): The serialized secret key share.
+            data (bytes): The serialized secret key share.
 
         Returns:
             SecretKeyShare: The deserialized secret key share.
@@ -638,13 +620,13 @@ class CPUCryptoSystem:
         ...
 
     def serialize_plaintext_tensor(
-        self, pt_tensor: CPUCryptoSystemPlainTextTensor
+        self, pt_tensor: GenericTensor[PlainText]
     ) -> bytes:
         """
         Serialize a tensor of PlainTexts into a bytes object.
 
         Args:
-            pt_tensor (CPUCryptoSystemPlainTextTensor): The tensor of plaintexts.
+            pt_tensor (GenericTensor[PlainText]): The tensor of plaintexts.
 
         Returns:
             bytes: The serialized tensor of plaintexts.
@@ -653,7 +635,7 @@ class CPUCryptoSystem:
 
     def deserialize_plaintext_tensor(
         self, data: bytes
-    ) -> CPUCryptoSystemPlainTextTensor:
+    ) -> GenericTensor[PlainText]:
         """
         Deserialize a tensor of PlainTexts from a bytes object.
 
@@ -661,18 +643,18 @@ class CPUCryptoSystem:
             data (bytes): The serialized tensor of plaintexts.
 
         Returns:
-            CPUCryptoSystemPlainTextTensor: The deserialized tensor of plaintexts.
+            GenericTensor[PlainText]: The deserialized tensor of plaintexts.
         """
         ...
 
     def serialize_ciphertext_tensor(
-        self, ct_tensor: CPUCryptoSystemCipherTextTensor
+        self, ct_tensor: GenericTensor[CipherText]
     ) -> bytes:
         """
         Serialize a tensor of CipherTexts into a bytes object.
 
         Args:
-            ct_tensor (CPUCryptoSystemCipherTextTensor): The tensor of ciphertexts.
+            ct_tensor (GenericTensor[CipherText]): The tensor of ciphertexts.
 
         Returns:
             bytes: The serialized tensor of ciphertexts.
@@ -681,7 +663,7 @@ class CPUCryptoSystem:
 
     def deserialize_ciphertext_tensor(
         self, data: bytes
-    ) -> CPUCryptoSystemCipherTextTensor:
+    ) -> GenericTensor[CipherText]:
         """
         Deserialize a tensor of CipherTexts from a bytes object.
 
@@ -689,27 +671,27 @@ class CPUCryptoSystem:
             data (bytes): The serialized tensor of ciphertexts.
 
         Returns:
-            CPUCryptoSystemCipherTextTensor: The deserialized tensor of ciphertexts.
+            GenericTensor[CipherText]: The deserialized tensor of ciphertexts.
         """
         ...
 
-    def serialize_part_decryption_result_tensor(
-        self, pdr_tensor: CPUCryptoSystemPartDecryptionResultTensor
+    def serialize_partial_decryption_result_tensor(
+        self, pdr_tensor: GenericTensor[PartialDecryptionResult]
     ) -> bytes:
         """
         Serialize a tensor of PartDecryptionResults into a bytes object.
 
         Args:
-            pdr_tensor (CPUCryptoSystemPartDecryptionResultTensor): The tensor of partial decryption results.
+            pdr_tensor (GenericTensor[PartialDecryptionResult]): The tensor of partial decryption results.
 
         Returns:
             bytes: The serialized tensor of partial decryption results.
         """
         ...
 
-    def deserialize_part_decryption_result_tensor(
+    def deserialize_partial_decryption_result_tensor(
         self, data: bytes
-    ) -> CPUCryptoSystemPartDecryptionResultTensor:
+    ) -> GenericTensor[PartialDecryptionResult]:
         """
         Deserialize a tensor of PartDecryptionResults from a bytes object.
 
@@ -717,18 +699,18 @@ class CPUCryptoSystem:
             data (bytes): The serialized tensor of partial decryption results.
 
         Returns:
-            CPUCryptoSystemPartDecryptionResultTensor: The deserialized tensor of partial decryption results.
+            GenericTensor[PartialDecryptionResult]: The deserialized tensor of partial decryption results.
         """
         ...
 
     def get_ciphertexts_from_ciphertext_tensor(
-        self, ct_tensor: CPUCryptoSystemCipherTextTensor
+        self, ct_tensor: GenericTensor[CipherText]
     ) -> List[CipherText]:
         """
         Get a list of ciphertexts from a tensor of ciphertexts.
 
         Args:
-            ct_tensor (CPUCryptoSystemCipherTextTensor): The tensor of ciphertexts.
+            ct_tensor (GenericTensor[CipherText]): The tensor of ciphertexts.
 
         Returns:
             List[CipherText]: The list of ciphertexts.

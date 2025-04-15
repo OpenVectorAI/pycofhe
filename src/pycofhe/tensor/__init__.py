@@ -2,6 +2,6 @@
 
 from __future__ import annotations
 
-from .tensor_core import IntTensor, Tensor
+from pycofhe.tensor.tensor_core import IntTensor, Tensor
 
 __all__ = ["Tensor", "IntTensor"]

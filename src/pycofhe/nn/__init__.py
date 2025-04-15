@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from . import functional
-from .modules import Linear, Module
+import pycofhe.nn.functional as functional
+from pycofhe.nn.modules import Linear, Module
+from pycofhe.nn.tensor_type import TensorType
 
-__all__ = ["functional", "Module", "Linear"]
+__all__ = ["functional", "Module", "Linear", "TensorType"]

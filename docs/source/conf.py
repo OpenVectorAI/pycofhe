@@ -10,7 +10,7 @@ import os
 import sys
 
 sys.path.insert(
-    0, os.path.abspath("../../src")
+    0, os.path.abspath("../src")
 )  # Source code dir relative to this file
 
 
@@ -34,7 +34,6 @@ autosummary_generate = True
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
-
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output

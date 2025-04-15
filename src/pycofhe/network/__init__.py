@@ -1,8 +1,6 @@
-"""pycofhe.network module provides Python bindings for the CPUCryptoSystemClientNode class along with other classes and enums."""
-
 from __future__ import annotations
 
-from .network_core import (
+from pycofhe.network.network_core import (
     ComputeOperation,
     ComputeOperationInstance,
     ComputeOperationOperand,
@@ -10,15 +8,46 @@ from .network_core import (
     ComputeRequest,
     ComputeResponse,
     ComputeResponseStatus,
-    CPUCryptoSystemClientNode,
     DataEncryptionType,
     DataType,
-    make_cpucryptosystem_client_node,
+    NodeType,
+    NodeDetails,
+    ReencryptorType,
+    ReencryptorDetails,
+    CryptoSystemType,
+    CryptoSystemDetails,
+    NetworkDetails,
+    CPUCryptoSystemClientNode,
+    make_cpu_cryptosystem_client_node,
+    encrypt_bit,
+    decrypt_bit,
+    homomorphic_nand,
+    encrypt_bitwise,
+    decrypt_bitwise,
+    homomorphic_and,
+    homomorphic_or,
+    homomorphic_not,
+    homomorphic_xor,
+    homomorphic_add,
+    homomorphic_sub,
+    homomorphic_lt,
+    homomorphic_eq,
+    homomorphic_gt,
+    serialize_bit,
+    deserialize_bit,
+    serialize_bitwise,
+    deserialize_bitwise,
+    native_transfer_func,
 )
 
-from .network_core import (encrypt_bit ,decrypt_bit, homomorphic_nand, encrypt_bitwise, decrypt_bitwise, homomorphic_and, homomorphic_or, homomorphic_not, homomorphic_xor, homomorphic_add, homomorphic_sub, homomorphic_lt, homomorphic_eq, homomorphic_gt, serialize_bit, deserialize_bit, serialize_bitwise, deserialize_bitwise)
-
-from .utils import perform_tensor_decryption, perform_tensor_op
+from pycofhe.network.utils import (
+    perform_op,
+    perform_decryption,
+    perform_reencryption,
+    perform_tensor_op,
+    perform_tensor_decryption,
+    peform_tensor_reencryption,
+)
 
 __all__ = [
     "ComputeOperation",
@@ -30,10 +59,21 @@ __all__ = [
     "DataType",
     "ComputeRequest",
     "ComputeResponse",
+    "NodeType",
+    "NodeDetails",
+    "ReencryptorType",
+    "ReencryptorDetails",
+    "CryptoSystemType",
+    "CryptoSystemDetails",
+    "NetworkDetails",
     "CPUCryptoSystemClientNode",
-    "make_cpucryptosystem_client_node",
+    "make_cpu_cryptosystem_client_node",
+    "perform_op",
+    "perform_decryption",
+    "perform_reencryption",
     "perform_tensor_op",
     "perform_tensor_decryption",
+    "peform_tensor_reencryption",
     "encrypt_bit",
     "decrypt_bit",
     "homomorphic_nand",
@@ -52,4 +92,5 @@ __all__ = [
     "deserialize_bit",
     "serialize_bitwise",
     "deserialize_bitwise",
+    "native_transfer_func",
 ]

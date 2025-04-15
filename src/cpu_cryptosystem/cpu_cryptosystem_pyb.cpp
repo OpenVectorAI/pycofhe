@@ -17,26 +17,27 @@ using SecretKeyShare = CPUCryptoSystem::SecretKeyShare;
 using PublicKey = CPUCryptoSystem::PublicKey;
 using PlainText = CPUCryptoSystem::PlainText;
 using CipherText = CPUCryptoSystem::CipherText;
-using PartDecryptionResult = CPUCryptoSystem::PartDecryptionResult;
+using PartialDecryptionResult = CPUCryptoSystem::PartialDecryptionResult;
 
 PYBIND11_MODULE(cpu_cryptosystem_core, m) {
 
     m.doc() = "Python binding for CoFHE CPU cryptosystem";
 
-    py::class_<SecretKey>(m, "SecretKey");
-    py::class_<SecretKeyShare>(m, "SecretKeyShare");
-    // both secret key share anad plaintext are mpz
-    m.attr("PlainText") = m.attr("SecretKeyShare");
-    py::class_<PublicKey>(m, "PublicKey");
-    py::class_<CipherText>(m, "CipherText");
-    py::class_<PartDecryptionResult>(m, "PartDecryptionResult");
+    py::class_<SecretKey>(m, "CPUCryptoSystemSecretKey");
+    py::class_<SecretKeyShare>(m, "CPUCryptoSystemSecretKeyShare");
+    // both secret key share and plaintext are mpz
+    m.attr("CPUCryptoSystemPlainText") = m.attr("CPUCryptoSystemSecretKeyShare");
+    py::class_<PublicKey>(m, "CPUCryptoSystemPublicKey");
+    py::class_<CipherText>(m, "CPUCryptoSystemCipherText");
+    py::class_<PartialDecryptionResult>(
+        m, "CPUCryptoSystemPartialDecryptionResult");
 
     init_tensor_class_bindings<CPUCryptoSystem::PlainText*>(
         m, "CPUCryptoSystemPlainTextTensor");
     init_tensor_class_bindings<CPUCryptoSystem::CipherText*>(
         m, "CPUCryptoSystemCipherTextTensor");
-    init_tensor_class_bindings<CPUCryptoSystem::PartDecryptionResult*>(
-        m, "CPUCryptoSystemPartDecryptionResultTensor");
+    init_tensor_class_bindings<CPUCryptoSystem::PartialDecryptionResult*>(
+        m, "CPUCryptoSystemPartialDecryptionResultTensor");
 
     py::class_<CPUCryptoSystem>(m, "CPUCryptoSystem")
         .def(py::init<uint32_t, uint32_t, bool>(), py::arg("security_level"),
@@ -145,7 +146,7 @@ PYBIND11_MODULE(cpu_cryptosystem_core, m) {
                     ct (CipherText): The ciphertext.
 
                 Returns:
-                    PartDecryptionResult: The partial decryption result.
+                    PartialDecryptionResult: The partial decryption result.
             )pbdoc")
         .def("part_decrypt_tensor", &CPUCryptoSystem::part_decrypt_tensor,
              py::arg("sks"), py::arg("ct_tensor"),
@@ -157,30 +158,30 @@ PYBIND11_MODULE(cpu_cryptosystem_core, m) {
                     ct_tensor (Tensor[CipherText]): The tensor of ciphertexts.
 
                 Returns:
-                    Tensor[PartDecryptionResult]: The tensor of partial decryption results.
+                    Tensor[PartialDecryptionResult]: The tensor of partial decryption results.
             )pbdoc")
-        .def("combine_part_decryption_results",
-             &CPUCryptoSystem::combine_part_decryption_results, py::arg("ct"),
-             py::arg("pdrs"),
+        .def("combine_partial_decryption_results",
+             &CPUCryptoSystem::combine_partial_decryption_results,
+             py::arg("ct"), py::arg("pdrs"),
              R"pbdoc(
                 Combine partial decryption results to recover the plaintext.
 
                 Args:
                     ct (CipherText): The ciphertext.
-                    pdrs (List[PartDecryptionResult]): The list of partial decryption results.
+                    pdrs (List[PartialDecryptionResult]): The list of partial decryption results.
 
                 Returns:
                     PlainText: The plaintext.
             )pbdoc")
-        .def("combine_part_decryption_results_tensor",
-             &CPUCryptoSystem::combine_part_decryption_results_tensor,
+        .def("combine_partial_decryption_results_tensor",
+             &CPUCryptoSystem::combine_partial_decryption_results_tensor,
              py::arg("ct"), py::arg("pdrs"),
              R"pbdoc(
                 Combine partial decryption results on a tensor of ciphertexts.
 
                 Args:
                     ct (CipherText): The ciphertext.
-                    pdrs (List[Tensor[PartDecryptionResult]]): The list of tensors of partial decryption results.
+                    pdrs (List[Tensor[PartialDecryptionResult]]): The list of tensors of partial decryption results.
 
                 Returns:
                     Tensor[PlainText]: The tensor of plaintexts.
@@ -379,7 +380,8 @@ PYBIND11_MODULE(cpu_cryptosystem_core, m) {
                     Tensor[PlainText]: The tensor of plaintexts corresponding to the values.
             )pbdoc")
         .def("get_float_from_plaintext",
-             &CPUCryptoSystem::get_float_from_plaintext, py::arg("pt"), py::arg("scaling_factor") = 1, py::arg("depth") = 1,
+             &CPUCryptoSystem::get_float_from_plaintext, py::arg("pt"),
+             py::arg("scaling_factor") = 1, py::arg("depth") = 1,
              R"pbdoc(
                 Convert a plaintext back into a floating-point approximation.
 
@@ -399,11 +401,13 @@ PYBIND11_MODULE(cpu_cryptosystem_core, m) {
                 auto flat_pts = pts;
                 flat_pts.flatten();
                 for (size_t i = 0; i < flat_pts.size(); i++) {
-                    // values.push_back(cs.get_float_from_plaintext(*flat_pts.at(i), scale_factor, depth));
-                    float val = cs.get_float_from_plaintext(*flat_pts.at(i), scale_factor, depth);
+                    // values.push_back(cs.get_float_from_plaintext(*flat_pts.at(i),
+                    // scale_factor, depth));
+                    float val = cs.get_float_from_plaintext(
+                        *flat_pts.at(i), scale_factor, depth);
                     if (std::isinf(val) || std::isnan(val)) {
-                        throw std::runtime_error(
-                            "Overflow detected for i=" + std::to_string(i));
+                        throw std::runtime_error("Overflow detected for i=" +
+                                                 std::to_string(i));
                     }
                     values.push_back(val);
                 }
@@ -437,20 +441,30 @@ PYBIND11_MODULE(cpu_cryptosystem_core, m) {
                 Returns:
                     CPUCryptoSystem: The deserialized cryptosystem.
             )pbdoc")
-        .def("serialize_secret_key", &CPUCryptoSystem::serialize_secret_key,
-             py::arg("sk"),
-             R"pbdoc(
+        .def(
+            "serialize_secret_key",
+            [](CPUCryptoSystem& cs, const SecretKey& sk) {
+                std::string data = cs.serialize_secret_key(sk);
+                return py::bytes(data);
+            },
+            py::arg("sk"),
+            R"pbdoc(
                 Serialize a SecretKey into a string.
 
                 Args:
                     sk (SecretKey): The secret key.
 
                 Returns:
-                    str: The serialized secret key.
+                    bytes: The serialized secret key.
             )pbdoc")
-        .def("deserialize_secret_key", &CPUCryptoSystem::deserialize_secret_key,
-             py::arg("data"),
-             R"pbdoc(
+        .def(
+            "deserialize_secret_key",
+            [](CPUCryptoSystem& cs, const py::bytes& data) {
+                std::string data_str = data;
+                return cs.deserialize_secret_key(data_str);
+            },
+            py::arg("data"),
+            R"pbdoc(
                 Deserialize a SecretKey from a string.
 
                 Args:
@@ -459,117 +473,166 @@ PYBIND11_MODULE(cpu_cryptosystem_core, m) {
                 Returns:
                     SecretKey: The deserialized secret key.
             )pbdoc")
-        .def("serialize_public_key", &CPUCryptoSystem::serialize_public_key,
-             py::arg("pk"),
-             R"pbdoc(
-                Serialize a PublicKey into a string.
-
-                Args:
-                    pk (PublicKey): The public key.
-
-                Returns:
-                    str: The serialized public key.
-            )pbdoc")
-        .def("deserialize_public_key", &CPUCryptoSystem::deserialize_public_key,
-             py::arg("data"),
-             R"pbdoc(
-                Deserialize a PublicKey from a string.
-
-                Args:
-                    data (str): The serialized public key.
-
-                Returns:
-                    PublicKey: The deserialized public key.
-            )pbdoc")
-        .def("serialize_plaintext", &CPUCryptoSystem::serialize_plaintext,
-             py::arg("pt"),
-             R"pbdoc(
-                Serialize a PlainText into a string.
-
-                Args:
-                    pt (PlainText): The plaintext.
-
-                Returns:
-                    str: The serialized plaintext.
-            )pbdoc")
-        .def("deserialize_plaintext", &CPUCryptoSystem::deserialize_plaintext,
-             py::arg("data"),
-             R"pbdoc(
-                Deserialize a PlainText from a string.
-
-                Args:
-                    data (str): The serialized plaintext.
-
-                Returns:
-                    PlainText: The deserialized plaintext.
-            )pbdoc")
-        .def("serialize_ciphertext", &CPUCryptoSystem::serialize_ciphertext,
-             py::arg("ct"),
-             R"pbdoc(
-                Serialize a CipherText into a string.
-
-                Args:
-                    ct (CipherText): The ciphertext.
-
-                Returns:
-                    str: The serialized ciphertext.
-            )pbdoc")
-        .def("deserialize_ciphertext", &CPUCryptoSystem::deserialize_ciphertext,
-             py::arg("data"),
-             R"pbdoc(
-                Deserialize a CipherText from a string.
-
-                Args:
-                    data (str): The serialized ciphertext.
-
-                Returns:
-                    CipherText: The deserialized ciphertext.
-            )pbdoc")
-        .def("serialize_part_decryption_result",
-             &CPUCryptoSystem::serialize_part_decryption_result, py::arg("pdr"),
-             R"pbdoc(
-                Serialize a PartDecryptionResult into a string.
-
-                Args:
-                    pdr (PartDecryptionResult): The partial decryption result.
-
-                Returns:
-                    str: The serialized partial decryption result.
-            )pbdoc")
-        .def("deserialize_part_decryption_result",
-             &CPUCryptoSystem::deserialize_part_decryption_result,
-             py::arg("data"),
-             R"pbdoc(
-                Deserialize a PartDecryptionResult from a string.
-
-                Args:
-                    data (str): The serialized partial decryption result.
-
-                Returns:
-                    PartDecryptionResult: The deserialized partial decryption result.
-            )pbdoc")
-        .def("serialize_secret_key_share",
-             &CPUCryptoSystem::serialize_secret_key_share, py::arg("sks"),
-             R"pbdoc(
-                Serialize a SecretKeyShare into a string.
-
-                Args:
-                    sks (SecretKeyShare): The secret key share.
-
-                Returns:
-                    str: The serialized secret key share.
-            )pbdoc")
-        .def("deserialize_secret_key_share",
-             &CPUCryptoSystem::deserialize_secret_key_share, py::arg("data"),
-             R"pbdoc(
-                Deserialize a SecretKeyShare from a string.
-
-                Args:
-                    data (str): The serialized secret key share.
-
-                Returns:
-                    SecretKeyShare: The deserialized secret key share.
-            )pbdoc")
+        .def(
+            "serialize_public_key",
+            [](CPUCryptoSystem& cs, const PublicKey& pk) {
+                std::string data = cs.serialize_public_key(pk);
+                return py::bytes(data);
+            },
+            py::arg("pk"),
+            R"pbdoc(
+                    Serialize a PublicKey into a bytes object.
+            
+                    Args:
+                        pk (PublicKey): The public key.
+            
+                    Returns:
+                        bytes: The serialized public key.
+                )pbdoc")
+        .def(
+            "deserialize_public_key",
+            [](CPUCryptoSystem& cs, const py::bytes& data) {
+                std::string data_str = data;
+                return cs.deserialize_public_key(data_str);
+            },
+            py::arg("data"),
+            R"pbdoc(
+                    Deserialize a PublicKey from a bytes object.
+            
+                    Args:
+                        data (bytes): The serialized public key.
+            
+                    Returns:
+                        PublicKey: The deserialized public key.
+                )pbdoc")
+        .def(
+            "serialize_plaintext",
+            [](CPUCryptoSystem& cs, const PlainText& pt) {
+                std::string data = cs.serialize_plaintext(pt);
+                return py::bytes(data);
+            },
+            py::arg("pt"),
+            R"pbdoc(
+                    Serialize a PlainText into a bytes object.
+            
+                    Args:
+                        pt (PlainText): The plaintext.
+            
+                    Returns:
+                        bytes: The serialized plaintext.
+                )pbdoc")
+        .def(
+            "deserialize_plaintext",
+            [](CPUCryptoSystem& cs, const py::bytes& data) {
+                std::string data_str = data;
+                return cs.deserialize_plaintext(data_str);
+            },
+            py::arg("data"),
+            R"pbdoc(
+                    Deserialize a PlainText from a bytes object.
+            
+                    Args:
+                        data (bytes): The serialized plaintext.
+            
+                    Returns:
+                        PlainText: The deserialized plaintext.
+                )pbdoc")
+        .def(
+            "serialize_ciphertext",
+            [](CPUCryptoSystem& cs, const CipherText& ct) {
+                std::string data = cs.serialize_ciphertext(ct);
+                return py::bytes(data);
+            },
+            py::arg("ct"),
+            R"pbdoc(
+                    Serialize a CipherText into a bytes object.
+            
+                    Args:
+                        ct (CipherText): The ciphertext.
+            
+                    Returns:
+                        bytes: The serialized ciphertext.
+                )pbdoc")
+        .def(
+            "deserialize_ciphertext",
+            [](CPUCryptoSystem& cs, const py::bytes& data) {
+                std::string data_str = data;
+                return cs.deserialize_ciphertext(data_str);
+            },
+            py::arg("data"),
+            R"pbdoc(
+                    Deserialize a CipherText from a bytes object.
+            
+                    Args:
+                        data (bytes): The serialized ciphertext.
+            
+                    Returns:
+                        CipherText: The deserialized ciphertext.
+                )pbdoc")
+        .def(
+            "serialize_partial_decryption_result",
+            [](CPUCryptoSystem& cs, const PartialDecryptionResult& pdr) {
+                std::string data = cs.serialize_partial_decryption_result(pdr);
+                return py::bytes(data);
+            },
+            py::arg("pdr"),
+            R"pbdoc(
+                    Serialize a PartialDecryptionResult into a bytes object.
+            
+                    Args:
+                        pdr (PartialDecryptionResult): The partial decryption result.
+            
+                    Returns:
+                        bytes: The serialized partial decryption result.
+                )pbdoc")
+        .def(
+            "deserialize_partial_decryption_result",
+            [](CPUCryptoSystem& cs, const py::bytes& data) {
+                std::string data_str = data;
+                return cs.deserialize_partial_decryption_result(data_str);
+            },
+            py::arg("data"),
+            R"pbdoc(
+                    Deserialize a PartialDecryptionResult from a bytes object.
+            
+                    Args:
+                        data (bytes): The serialized partial decryption result.
+            
+                    Returns:
+                        PartialDecryptionResult: The deserialized partial decryption result.
+                )pbdoc")
+        .def(
+            "serialize_secret_key_share",
+            [](CPUCryptoSystem& cs, const SecretKeyShare& sks) {
+                std::string data = cs.serialize_secret_key_share(sks);
+                return py::bytes(data);
+            },
+            py::arg("sks"),
+            R"pbdoc(
+                    Serialize a SecretKeyShare into a bytes object.
+            
+                    Args:
+                        sks (SecretKeyShare): The secret key share.
+            
+                    Returns:
+                        bytes: The serialized secret key share.
+                )pbdoc")
+        .def(
+            "deserialize_secret_key_share",
+            [](CPUCryptoSystem& cs, const py::bytes& data) {
+                std::string data_str = data;
+                return cs.deserialize_secret_key_share(data_str);
+            },
+            py::arg("data"),
+            R"pbdoc(
+                    Deserialize a SecretKeyShare from a bytes object.
+            
+                    Args:
+                        data (bytes): The serialized secret key share.
+            
+                    Returns:
+                        SecretKeyShare: The deserialized secret key share.
+                )pbdoc")
         .def(
             "serialize_plaintext_tensor",
             [](CPUCryptoSystem& cs, const Tensor<PlainText*>& pt_tensor) {
@@ -635,11 +698,11 @@ PYBIND11_MODULE(cpu_cryptosystem_core, m) {
                     Tensor[CipherText]: The deserialized tensor of ciphertexts.
             )pbdoc")
         .def(
-            "serialize_part_decryption_result_tensor",
+            "serialize_partial_decryption_result_tensor",
             [](CPUCryptoSystem& cs,
-               const Tensor<PartDecryptionResult*>& pdr_tensor) {
+               const Tensor<PartialDecryptionResult*>& pdr_tensor) {
                 std::string data =
-                    cs.serialize_part_decryption_result_tensor(pdr_tensor);
+                    cs.serialize_partial_decryption_result_tensor(pdr_tensor);
                 return py::bytes(data);
             },
             py::arg("pdr_tensor"),
@@ -647,16 +710,17 @@ PYBIND11_MODULE(cpu_cryptosystem_core, m) {
                 Serialize a tensor of PartDecryptionResults into a bytes object.
 
                 Args:
-                    pdr_tensor (Tensor[PartDecryptionResult]): The tensor of partial decryption results.
+                    pdr_tensor (Tensor[PartialDecryptionResult]): The tensor of partial decryption results.
 
                 Returns:
                     bytes: The serialized tensor of partial decryption results.
             )pbdoc")
         .def(
-            "deserialize_part_decryption_result_tensor",
+            "deserialize_partial_decryption_result_tensor",
             [](CPUCryptoSystem& cs, const py::bytes& data) {
                 std::string data_str = data;
-                return cs.deserialize_part_decryption_result_tensor(data_str);
+                return cs.deserialize_partial_decryption_result_tensor(
+                    data_str);
             },
             py::arg("data"),
             R"pbdoc(
@@ -666,7 +730,7 @@ PYBIND11_MODULE(cpu_cryptosystem_core, m) {
                     data (bytes): The serialized tensor of partial decryption results.
 
                 Returns:
-                    Tensor[PartDecryptionResult]: The deserialized tensor of partial decryption results.
+                    Tensor[PartialDecryptionResult]: The deserialized tensor of partial decryption results.
             )pbdoc")
         .def(
             "get_ciphertexts_from_ciphertext_tensor",

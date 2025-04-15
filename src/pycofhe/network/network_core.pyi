@@ -3,12 +3,31 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import List, TYPE_CHECKING, overload
+from typing import List, overload, Generic
 
-if TYPE_CHECKING:
-    from pycofhe.network.binary_scheme_core import *
+from pycofhe.cryptosystems.cpu_cryptosystem_core import (
+    CPUCryptoSystemSecretKey,
+    CPUCryptoSystemSecretKeyShare,
+    CPUCryptoSystemPublicKey,
+    CPUCryptoSystemPlainText,
+    CPUCryptoSystemCipherText,
+    CPUCryptoSystemPartialDecryptionResult,
+)
+from pycofhe.cryptosystems.cryptosystem import (
+    CipherText,
+    CryptoSystem,
+    PartialDecryptionResult,
+    PlainText,
+    PublicKey,
+    SecretKey,
+    SecretKeyShare,
+)
 
-from pycofhe.cpu_cryptosystem import CPUCryptoSystem, PublicKey
+
+from pycofhe.network.binary_scheme_core import *
+from pycofhe.network.native_transfer_func import *
+from pycofhe.network.network_details import *
+from pycofhe.network.reencryptor import *
 
 # pylint: disable=unused-argument,unnecessary-ellipsis
 
@@ -35,10 +54,17 @@ class ComputeOperation(Enum):
     """
 
     DECRYPT = ...
+    REENCRYPT = ...
     ADD = ...
     SUBTRACT = ...
     MULTIPLY = ...
     DIVIDE = ...
+    LT = ...
+    GT = ...
+    EQ = ...
+    NEQ = ...
+    LTEQ = ...
+    GTEQ = ...
 
 class DataType(Enum):
     """
@@ -407,7 +433,7 @@ class ComputeOperationInstance:
         ...
 
     @staticmethod
-    def from_string(data: str) -> "ComputeOperationInstance":
+    def from_string(data: str) -> ComputeOperationInstance:
         """
         Create a ComputeOperationInstance from its string representation.
 
@@ -468,9 +494,19 @@ class ComputeRequest:
         """
         ...
 
-class CPUCryptoSystemClientNode:
+class ClientNode(
+    Generic[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+        PKCEncryptor,
+    ]
+):
     """
-    A client node for the CPU cryptosystem.
+    A client node for the cryptosystem.
     """
 
     def compute(self, request: ComputeRequest) -> ComputeResponse:
@@ -486,12 +522,21 @@ class CPUCryptoSystemClientNode:
         ...
 
     @property
-    def cryptosystem(self) -> CPUCryptoSystem:
+    def cryptosystem(
+        self,
+    ) -> CryptoSystem[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+    ]:
         """
         Get the cryptosystem of the client node.
 
         Returns:
-            CPUCryptoSystem: The cryptosystem of the client node.
+            CryptoSystem: The cryptosystem of the client node.
         """
         ...
 
@@ -505,7 +550,48 @@ class CPUCryptoSystemClientNode:
         """
         ...
 
-def make_cpucryptosystem_client_node(
+    @property
+    def reencryptor(
+        self,
+    ) -> Reencryptor[
+        PKCEncryptor,
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+    ]:
+        """
+        Get the reencryptor of the client node.
+
+        Returns:
+            Reencryptor: The reencryptor of the client node.
+        """
+        ...
+
+    @property
+    def network_details(self) -> NetworkDetails:
+        """
+        Get the network details of the client node.
+
+        Returns:
+            NetworkDetails: The network details of the client node.
+        """
+        ...
+
+CPUCryptoSystemClientNode = ClientNode[
+    CPUCryptoSystemSecretKey,
+    CPUCryptoSystemSecretKeyShare,
+    CPUCryptoSystemPublicKey,
+    CPUCryptoSystemPlainText,
+    CPUCryptoSystemCipherText,
+    CPUCryptoSystemPartialDecryptionResult,
+    RSAPKCEncryptor,
+]
+
+@overload
+def make_cpu_cryptosystem_client_node(
     client_ip: str,
     client_port: str,
     setup_ip: str,
@@ -513,7 +599,7 @@ def make_cpucryptosystem_client_node(
     cert_file: str = "./server.pem",
 ) -> CPUCryptoSystemClientNode:
     """
-    Create a client node for the CPU cryptosystem.
+    Create a client node for the cpu cryptosystem.
 
     Args:
         client_ip (str): The IP address of the client node.
@@ -523,6 +609,22 @@ def make_cpucryptosystem_client_node(
         cert_file (str): The certificate file for the client node. Default is "./server.pem".
 
     Returns:
-        CPUCryptoSystemClientNode: A client node for the CPU cryptosystem.
+        ClientNode: A client node for the cpu cryptosystem.
+    """
+    ...
+@overload
+def make_cpu_cryptosystem_client_node(
+    network_details:NetworkDetails,
+    cert_file: str = "./server.pem",
+) -> CPUCryptoSystemClientNode:
+    """
+    Create a client node for the cpu cryptosystem.
+
+    Args:
+        network_details (NetworkDetails): The network details for the client node.
+        cert_file (str): The certificate file for the client node. Default is "./server.pem".
+
+    Returns:
+        ClientNode: A client node for the cpu cryptosystem.
     """
     ...

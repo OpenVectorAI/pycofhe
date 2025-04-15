@@ -23,10 +23,17 @@ void init_compute_request_response_bindings(py::module_& m) {
 
     py::enum_<CoFHE::ComputeRequest::ComputeOperation>(m, "ComputeOperation")
         .value("DECRYPT", CoFHE::ComputeRequest::ComputeOperation::DECRYPT)
+        .value("REENCRYPT", CoFHE::ComputeRequest::ComputeOperation::REENCRYPT)
         .value("ADD", CoFHE::ComputeRequest::ComputeOperation::ADD)
         .value("SUBTRACT", CoFHE::ComputeRequest::ComputeOperation::SUBTRACT)
         .value("MULTIPLY", CoFHE::ComputeRequest::ComputeOperation::MULTIPLY)
-        .value("DIVIDE", CoFHE::ComputeRequest::ComputeOperation::DIVIDE);
+        .value("DIVIDE", CoFHE::ComputeRequest::ComputeOperation::DIVIDE)
+        .value("LT", CoFHE::ComputeRequest::ComputeOperation::LT)
+        .value("GT", CoFHE::ComputeRequest::ComputeOperation::GT)
+        .value("EQ", CoFHE::ComputeRequest::ComputeOperation::EQ)
+        .value("NEQ", CoFHE::ComputeRequest::ComputeOperation::NEQ)
+        .value("LTEQ", CoFHE::ComputeRequest::ComputeOperation::LTEQ)
+        .value("GTEQ", CoFHE::ComputeRequest::ComputeOperation::GTEQ);
 
     py::enum_<CoFHE::ComputeRequest::DataType>(m, "DataType")
         .value("SINGLE", CoFHE::ComputeRequest::DataType::SINGLE)

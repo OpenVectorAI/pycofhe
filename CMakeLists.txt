@@ -22,7 +22,7 @@ target_include_directories(cpu_cryptosystem_core
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/pycofhe>
     $<INSTALL_INTERFACE:include/pycofhe>)
 target_link_libraries(cpu_cryptosystem_core PRIVATE CoFHE)
-install(TARGETS cpu_cryptosystem_core DESTINATION ${SKBUILD_PROJECT_NAME}/cpu_cryptosystem)
+install(TARGETS cpu_cryptosystem_core DESTINATION ${SKBUILD_PROJECT_NAME}/cryptosystems)
 
 file(GLOB NETWORK_PY_BINDING_SOURCES src/network/*_pyb.cpp)
 pybind11_add_module(network_core MODULE ${NETWORK_PY_BINDING_SOURCES})

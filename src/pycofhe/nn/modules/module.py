@@ -3,55 +3,89 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
+
 
 if TYPE_CHECKING:
     from pycofhe.tensor.tensor_core import GenericTensor
+    from pycofhe.network.network_core import ClientNode
 
-from pycofhe.network import CPUCryptoSystemClientNode
+SecretKey = TypeVar("SecretKey")
+SecretKeyShare = TypeVar("SecretKeyShare")
+PublicKey = TypeVar("PublicKey")
+PlainText = TypeVar("PlainText")
+CipherText = TypeVar("CipherText")
+PartialDecryptionResult = TypeVar("PartialDecryptionResult")
+PKCEncryptor = TypeVar("PKCEncryptor")
 
-input_tensor_value_type = TypeVar("input_tensor_value_type")
-output_tensor_value_type = TypeVar("output_tensor_value_type")
-
-
-class Module(ABC):
-    """Base class for all neural network modules."""
+class Module(
+    Generic[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+        PKCEncryptor,
+    ],
+    ABC,
+):
+    """A Generic Base class for all neural network modules."""
 
     __slots__ = ("_client_node",)
 
-    client_node: CPUCryptoSystemClientNode
+    client_node: ClientNode[
+        SecretKey,
+        SecretKeyShare,
+        PublicKey,
+        PlainText,
+        CipherText,
+        PartialDecryptionResult,
+        PKCEncryptor,
+    ]
 
-    def __init__(self, client_node: CPUCryptoSystemClientNode) -> None:
+    def __init__(
+        self,
+        client_node: ClientNode[
+            SecretKey,
+            SecretKeyShare,
+            PublicKey,
+            PlainText,
+            CipherText,
+            PartialDecryptionResult,
+            PKCEncryptor,
+        ],
+    ) -> None:
         """Initialize the module.
 
         Args:
-            client_node (CPUCryptoSystemClientNode): The execution environment.
+            client_node (ClientNode): The execution environment.
         """
         self._client_node = client_node
 
     @abstractmethod
     def forward(
         self,
-        input_tensor: GenericTensor[input_tensor_value_type],
+        input_tensor: GenericTensor[Any],
         *args,
         **kwargs,
-    ) -> GenericTensor[output_tensor_value_type]:
+    ) -> GenericTensor[Any]:
         """Forward pass.
 
         Args:
-            client_node (CPUCryptoSystemClientNode|CPUCryptoSystem): The execution environment.
+            client_node (ClientNode|CPUCryptoSystem): The execution environment.
             *inputs (GenericTensor): The input tensors.
 
         Returns:
             GenericTensor: The output tensor.
         """
         raise NotImplementedError
-    
+
     def __call__(
         self,
-        input_tensor: GenericTensor[input_tensor_value_type],
+        input_tensor: GenericTensor[Any],
         *args,
         **kwargs,
-    ) -> GenericTensor[output_tensor_value_type]:
+    ) -> GenericTensor[Any]:
         """Call the forward method."""
         return self.forward(input_tensor, *args, **kwargs)
