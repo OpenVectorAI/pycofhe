@@ -130,6 +130,7 @@ class CryptoSystemDetails:
         k: int,
         threshold: int,
         total_nodes: int,
+        N:str
     ) -> None:
         """Initialize the CryptoSystemDetails class.
 
@@ -140,6 +141,7 @@ class CryptoSystemDetails:
             k (int): The number of shares.
             threshold (int): The threshold for secret sharing.
             total_nodes (int): The total number of nodes.
+            N (str): The N value for the cryptosystem.
         """
         ...
 
@@ -201,6 +203,16 @@ class CryptoSystemDetails:
     @total_nodes.setter
     def total_nodes(self, total_nodes: int) -> None:
         """Set the total number of nodes."""
+        ...
+
+    @property
+    def N(self) -> str:
+        """Get the N value for the cryptosystem."""
+        ...
+
+    @N.setter
+    def N(self, N: str) -> None:
+        """Set the N value for the cryptosystem."""
         ...
 
 class NetworkDetails:

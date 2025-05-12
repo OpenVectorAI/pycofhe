@@ -158,7 +158,8 @@ def test_non_connected_client_node(client_node):
         real_nd.cryptosystem_details.security_level,
         real_nd.cryptosystem_details.k,
         real_nd.cryptosystem_details.threshold,
-        real_nd.cryptosystem_details.total_nodes
+        real_nd.cryptosystem_details.total_nodes,
+        real_nd.cryptosystem_details.N
     )
     nodes:list[NodeDetails] = []
     reencryptor = ReencryptorDetails(

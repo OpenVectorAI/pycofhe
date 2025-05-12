@@ -65,10 +65,10 @@ void init_network_details_bindings(py::module_& m) {
         .def(py::init<>())
         .def(py::init([](CryptoSystemType type, py::bytes public_key,
                          size_t security_level, size_t k, size_t threshold,
-                         size_t total_nodes) {
+                         size_t total_nodes, std::string N) {
             return CryptoSystemDetails(type, std::string(public_key),
                                        security_level, k, threshold,
-                                       total_nodes);
+                                       total_nodes, N);
         }))
         .def_readwrite("type", &CryptoSystemDetails::type,
                        R"pbdoc(
@@ -113,7 +113,13 @@ void init_network_details_bindings(py::module_& m) {
                                Get the total number of nodes.
                                Returns:
                                    int: The total number of nodes.
-                                   )pbdoc");
+                                   )pbdoc")
+        .def_readwrite("N", &CryptoSystemDetails::N,
+                       R"pbdoc(
+                Get the N value of the cryptosystem.
+                Returns:
+                    int: The N value of the cryptosystem.
+            )pbdoc");
 
     py::class_<NetworkDetails>(m, "NetworkDetails")
         .def(py::init<>())

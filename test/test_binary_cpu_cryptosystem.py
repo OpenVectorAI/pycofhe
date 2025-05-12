@@ -3,6 +3,8 @@
 from __future__ import annotations
 import random
 
+from dotenv import dotenv_values
+
 from pycofhe.network import (
     encrypt_bit,
     decrypt_bit,
@@ -23,6 +25,7 @@ from pycofhe.network import (
     serialize_bitwise,
     deserialize_bitwise,
 )
+from pycofhe.network.network_core import make_cpu_cryptosystem_client_node
 
 
 def test_encrypt_bitwise_and_decrypt_bitwise(client_node):
