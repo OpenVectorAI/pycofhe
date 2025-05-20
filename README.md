@@ -24,7 +24,7 @@ In addition to the bindings, PyCOFHE extends the functionality by including comm
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/pycofhe.git
+   git clone https://github.com/openvectorai/pycofhe.git
    cd pycofhe
    ```
 

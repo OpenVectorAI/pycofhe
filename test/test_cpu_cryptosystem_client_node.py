@@ -26,49 +26,24 @@ from pycofhe.network import (
 
 def test_compute_response():
     """Test ComputeResponse class"""
-    r = ComputeResponse(ComputeResponseStatus.OK, "SomeData")
+    r = ComputeResponse(ComputeResponseStatus.OK, b"SomeData")
     assert r.status == ComputeResponseStatus.OK
-    assert r.data == "SomeData"
+    assert r.data == b"SomeData"
 
     r.status = ComputeResponseStatus.ERROR
-    r.data = "ErrorData"
     assert r.status == ComputeResponseStatus.ERROR
-    assert r.data == "ErrorData"
 
-    r.data_bytes = b"\x01\x02"
-    assert r.data_bytes == b"\x01\x02"
-
-
-def test_compute_operation_operand_str_data():
-    """Test ComputeOperationOperand class"""
-    operand = ComputeOperationOperand(
-        DataType.SINGLE, DataEncryptionType.PLAINTEXT, "123"
-    )
-    assert operand.data_type == DataType.SINGLE
-    assert operand.encryption_type == DataEncryptionType.PLAINTEXT
-    assert operand.data == "123"
-
-    operand.data = "456"
-    assert operand.data == "456"
-
-
-def test_compute_operation_operand_bytes_data():
-    """Test ComputeOperationOperand class"""
-    operand = ComputeOperationOperand(
-        DataType.SINGLE, DataEncryptionType.CIPHERTEXT, b"789"
-    )
-    assert operand.data_type == DataType.SINGLE
-    assert operand.encryption_type == DataEncryptionType.CIPHERTEXT
-    assert operand.data_bytes == b"789"
+    r.data = b"\x01\x02"
+    assert r.data == b"\x01\x02"
 
 
 def test_compute_operation_instance():
     """Test ComputeOperationInstance class"""
     op1 = ComputeOperationOperand(
-        DataType.SINGLE, DataEncryptionType.PLAINTEXT, "123"
+        DataType.SINGLE, DataEncryptionType.PLAINTEXT, b"123"
     )
     op2 = ComputeOperationOperand(
-        DataType.SINGLE, DataEncryptionType.PLAINTEXT, "456"
+        DataType.SINGLE, DataEncryptionType.PLAINTEXT, b"456"
     )
     instance = ComputeOperationInstance(
         ComputeOperationType.BINARY,
@@ -78,14 +53,14 @@ def test_compute_operation_instance():
     assert instance.operation_type == ComputeOperationType.BINARY
     assert instance.operation == ComputeOperation.ADD
     assert len(instance.operands) == 2
-    assert instance.operands[0].data == "123"
-    assert instance.operands[1].data == "456"
+    assert instance.operands[0].data == b"123"
+    assert instance.operands[1].data == b"456"
 
 
 def test_compute_request():
     """Test ComputeRequest class"""
     op = ComputeOperationOperand(
-        DataType.SINGLE, DataEncryptionType.PLAINTEXT, "999"
+        DataType.SINGLE, DataEncryptionType.PLAINTEXT, b"999"
     )
     instance = ComputeOperationInstance(
         ComputeOperationType.UNARY,
@@ -95,7 +70,7 @@ def test_compute_request():
     req = ComputeRequest(instance)
     assert req.operation.operation_type == ComputeOperationType.UNARY
     assert req.operation.operation == ComputeOperation.DECRYPT
-    assert req.operation.operands[0].data == "999"
+    assert req.operation.operands[0].data == b"999"
 
 
 def test_client_node_multiply(client_node):
@@ -128,7 +103,7 @@ def test_client_node_multiply(client_node):
     res = client_node.compute(req)
 
     dop = ComputeOperationOperand(
-        DataType.TENSOR, DataEncryptionType.CIPHERTEXT, res.data_bytes
+        DataType.TENSOR, DataEncryptionType.CIPHERTEXT, res.data
     )
     dop_instance = ComputeOperationInstance(
         ComputeOperationType.UNARY, ComputeOperation.DECRYPT, [dop]
@@ -136,7 +111,7 @@ def test_client_node_multiply(client_node):
     req = ComputeRequest(dop_instance)
     res = client_node.compute(req)
 
-    dres = cs.deserialize_plaintext_tensor(res.data_bytes)
+    dres = cs.deserialize_plaintext_tensor(res.data)
     float_res = cs.get_float_from_plaintext_tensor(dres)
 
     # Explanation:

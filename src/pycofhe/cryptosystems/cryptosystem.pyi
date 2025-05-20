@@ -25,20 +25,6 @@ class CryptoSystem(
 ):
     """Python binding for CoFHE cryptosystem."""
 
-    def __init__(
-        self, security_level: int, k: int, compact: bool = False
-    ) -> None:
-        """
-        Construct a CPUCryptoSystem with the specified security level (e.g. 128),
-        message space 2^k, and a boolean for compact mode.
-
-        Args:
-            security_level (int): The security level in bits.
-            k (int): The message space size (2^k).
-            compact (bool): Whether to use compact mode.
-        """
-        ...
-
     @overload
     def keygen(self) -> SecretKey:
         """

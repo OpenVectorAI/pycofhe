@@ -46,7 +46,10 @@ void init_compute_request_response_bindings(py::module_& m) {
                CoFHE::ComputeRequest::DataEncrytionType::CIPHERTEXT);
 
     py::class_<CoFHE::ComputeResponse>(m, "ComputeResponse")
-        .def(py::init<CoFHE::ComputeResponse::Status, std::string>())
+        .def(py::init<>(
+            [](CoFHE::ComputeResponse::Status status, const py::bytes& data) {
+                return CoFHE::ComputeResponse(status, std::string(data));
+            }))
         .def_property(
             "status",
             [](const CoFHE::ComputeResponse& self) { return self.status(); },
@@ -56,27 +59,29 @@ void init_compute_request_response_bindings(py::module_& m) {
             })
         .def_property(
             "data",
-            [](const CoFHE::ComputeResponse& self) { return self.data(); },
-            [](CoFHE::ComputeResponse& self, const std::string& data) {
-                self.data() = data;
-            })
-        .def_property(
-            "data_bytes",
             [](const CoFHE::ComputeResponse& self) {
                 return py::bytes(self.data());
             },
             [](CoFHE::ComputeResponse& self, const py::bytes& data) {
                 self.data() = std::string(data);
             })
-        .def("to_string", &CoFHE::ComputeResponse::to_string)
-        .def_static("from_string", &CoFHE::ComputeResponse::from_string);
+        .def("to_string",
+             [](CoFHE::ComputeResponse& self) {
+                 return py::bytes(self.to_string());
+             })
+        .def_static("from_string", [](const py::bytes& str) {
+            return CoFHE::ComputeResponse::from_string(std::string(str));
+        });
 
     py::class_<CoFHE::ComputeRequest::ComputeOperationOperand>(
         m, "ComputeOperationOperand")
-        .def(py::init<CoFHE::ComputeRequest::DataType,
-                      CoFHE::ComputeRequest::DataEncrytionType, std::string>())
-        .def(py::init<CoFHE::ComputeRequest::DataType,
-                      CoFHE::ComputeRequest::DataEncrytionType, py::bytes>())
+        .def(py::init<>(
+            [](CoFHE::ComputeRequest::DataType data_type,
+               CoFHE::ComputeRequest::DataEncrytionType encryption_type,
+               const py::bytes& data) {
+                return CoFHE::ComputeRequest::ComputeOperationOperand(
+                    data_type, encryption_type, std::string(data));
+            }))
         .def_property(
             "data_type",
             [](const CoFHE::ComputeRequest::ComputeOperationOperand& self) {
@@ -98,27 +103,10 @@ void init_compute_request_response_bindings(py::module_& m) {
         .def_property(
             "data",
             [](const CoFHE::ComputeRequest::ComputeOperationOperand& self) {
-                return self.data();
-            },
-            [](CoFHE::ComputeRequest::ComputeOperationOperand& self,
-               const std::string& data) { self.data() = data; })
-        .def_property(
-            "data_bytes",
-            [](const CoFHE::ComputeRequest::ComputeOperationOperand& self) {
                 return py::bytes(self.data());
             },
             [](CoFHE::ComputeRequest::ComputeOperationOperand& self,
-               const py::bytes& data) { self.data() = std::string(data); })
-        .def("to_string",
-             &CoFHE::ComputeRequest::ComputeOperationOperand::to_string)
-        .def_static(
-            "from_string",
-            py::overload_cast<const std::string&>(
-                &CoFHE::ComputeRequest::ComputeOperationOperand::from_string))
-        .def_static(
-            "from_string",
-            py::overload_cast<const std::string&, size_t>(
-                &CoFHE::ComputeRequest::ComputeOperationOperand::from_string));
+               const py::bytes& data) { self.data() = std::string(data); });
 
     py::class_<CoFHE::ComputeRequest::ComputeOperationInstance>(
         m, "ComputeOperationInstance")
@@ -148,18 +136,18 @@ void init_compute_request_response_bindings(py::module_& m) {
             "operands",
             [](const CoFHE::ComputeRequest::ComputeOperationInstance& self) {
                 return self.operands();
-            })
-        .def("to_string",
-             &CoFHE::ComputeRequest::ComputeOperationInstance::to_string)
-        .def_static(
-            "from_string",
-            &CoFHE::ComputeRequest::ComputeOperationInstance::from_string);
+            });
 
     py::class_<CoFHE::ComputeRequest>(m, "ComputeRequest")
         .def(py::init<const CoFHE::ComputeRequest::ComputeOperationInstance&>())
         .def_property_readonly(
             "operation",
             [](const CoFHE::ComputeRequest& self) { return self.operation(); })
-        .def("to_string", &CoFHE::ComputeRequest::to_string)
-        .def_static("from_string", &CoFHE::ComputeRequest::from_string);
+        .def("to_string",
+             [](CoFHE::ComputeRequest& self) {
+                 return py::bytes(self.to_string());
+             })
+        .def_static("from_string", [](const py::bytes& str) {
+            return CoFHE::ComputeRequest::from_string(std::string(str));
+        });
 }

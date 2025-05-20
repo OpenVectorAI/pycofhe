@@ -1,10 +1,10 @@
+#include <sstream>
 #include <string>
 
+#include <gmp.h>
 #include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-#include <gmp.h>
 
 #include "cofhe.hpp"
 #include "tensor/tensor_pyb.hpp"
@@ -26,7 +26,8 @@ PYBIND11_MODULE(cpu_cryptosystem_core, m) {
     py::class_<SecretKey>(m, "CPUCryptoSystemSecretKey");
     py::class_<SecretKeyShare>(m, "CPUCryptoSystemSecretKeyShare");
     // both secret key share and plaintext are mpz
-    m.attr("CPUCryptoSystemPlainText") = m.attr("CPUCryptoSystemSecretKeyShare");
+    m.attr("CPUCryptoSystemPlainText") =
+        m.attr("CPUCryptoSystemSecretKeyShare");
     py::class_<PublicKey>(m, "CPUCryptoSystemPublicKey");
     py::class_<CipherText>(m, "CPUCryptoSystemCipherText");
     py::class_<PartialDecryptionResult>(
@@ -40,19 +41,83 @@ PYBIND11_MODULE(cpu_cryptosystem_core, m) {
         m, "CPUCryptoSystemPartialDecryptionResultTensor");
 
     py::class_<CPUCryptoSystem>(m, "CPUCryptoSystem")
-        .def(py::init<uint32_t, uint32_t, bool>(), py::arg("security_level"),
-             py::arg("k"), py::arg("compact") = false,
+        .def(py::init<>([](uint32_t security_level, uint32_t k,
+                           const std::string& N = std::string(),
+                           bool compact = false) {
+                 if (N.empty()) {
+                     return new CPUCryptoSystem(security_level, k, compact);
+                 } else {
+                     return new CPUCryptoSystem(security_level, k, N, compact);
+                 }
+             }),
+             py::arg("security_level"), py::arg("k"),
+             py::arg("N") = std::string(), py::arg("compact") = false,
              R"pbdoc(
                 Construct a CPUCryptoSystem with the specified security level (e.g. 128),
-                message space 2^k, and a boolean for compact mode.
+                message space 2^k, and a string N.
 
                 Args:
                     security_level (int): The security level in bits.
                     k (int): The message space size (2^k).
-                    compact (bool): Whether to use compact mode.
+                    N (str): The N value as a string. Default is empty string.
+                    compact (bool): Whether to use compact mode. Default is false.
 
                 Returns:
                     CPUCryptoSystem: The constructed cryptosystem.
+            )pbdoc")
+        .def_property_readonly(
+            "k", [](const CPUCryptoSystem& cs) { return cs.get_hsm2k().k(); },
+            R"pbdoc(
+                Get the message space size (2^k).
+
+                Returns:
+                    int: The message space size.
+            )pbdoc")
+        .def_property_readonly(
+            "exponent_bound",
+            [](const CPUCryptoSystem& cs)
+                -> py::object { // Explicit return type for clarity
+                std::ostringstream oss;
+                oss << cs.get_hsm2k().Cl_DeltaK().class_number_bound();
+                PyObject* py_long =
+                    PyLong_FromString(oss.str().c_str(), nullptr, 10);
+                if (!py_long) { // Always check for errors from C API calls
+                    throw py::error_already_set(); // Propagate Python exception
+                }
+                // py::handle is a non-owning wrapper.
+                // py::reinterpret_steal<py::object> or
+                // py::reinterpret_steal<py::int_> tells pybind11 to take
+                // ownership (steal the reference) of py_long. return
+                // py::reinterpret_steal<py::object>(py_long); Or more
+                // specifically, if you are sure it's an int:
+                return py::reinterpret_steal<py::int_>(py_long);
+            },
+            R"pbdoc(
+                Get the exponent bound.
+
+                Returns:
+                    int: The exponent bound.
+            )pbdoc")
+        .def_property_readonly(
+            "N",
+            [](const CPUCryptoSystem& cs)
+                -> py::object { // Explicit return type
+                std::ostringstream oss;
+                oss << cs.get_hsm2k().N();
+                PyObject* py_long =
+                    PyLong_FromString(oss.str().c_str(), nullptr, 10);
+                if (!py_long) {
+                    throw py::error_already_set();
+                }
+            // return py::reinterpret_steal<py::object>(py_long);
+            Or:
+                return py::reinterpret_steal<py::int_>(py_long);
+            },
+            R"pbdoc(
+                Get the N value.
+
+                Returns:
+                    int: The N value.
             )pbdoc")
         .def("keygen",
              py::overload_cast<>(&CPUCryptoSystem::keygen, py::const_),

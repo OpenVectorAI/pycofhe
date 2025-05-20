@@ -98,14 +98,11 @@ def compare_tensors(
 
 
 def run_linear(
-    client_node, input_size, output_size, scaling_factor, tolerance, is_int
+    client_node, input_size, output_size, scaling_factor, tolerance, is_int,encrypt_weights
 ):
     """Test the Linear class."""
-    input_size = 10
-    output_size = 5
-    weights = get_random_tensor((input_size, output_size))
-    bias = get_random_tensor((1, output_size))
-    scaling_factor = 10000
+    weights = get_random_tensor((input_size, output_size), is_int, 16,-16)
+    bias = get_random_tensor((1, output_size), is_int, 16,-16)
 
     linear = Linear(
         client_node,
@@ -115,35 +112,35 @@ def run_linear(
         bias,
         TensorType.Float,
         TensorType.Float,
-        True,
+        encrypt_weights,
         True,
         scaling_factor,
     )
 
-    input_tensor = get_random_tensor((3, input_size))
+    input_tensor = get_random_tensor((8, input_size), is_int, 16,-16)
     output_tensor = linear(input_tensor, TensorType.Float)
     output_decrypted = linear.map_back(output_tensor)
     output_tensor_expected = linear_in_plaintext(input_tensor, weights, bias)
 
-    assert compare_tensors(output_decrypted, output_tensor_expected, 20)
+    assert compare_tensors(output_decrypted, output_tensor_expected, tolerance)
 
 
 def test_linear(client_node):
     """Test the Linear class."""
-    input_size = 10
-    output_size = 5
+    input_size = 256
+    output_size = 256
     scaling_factor = 10000
 
     # Test with integer values
-    tolerance = 2
+    tolerance = 0.1
     is_int = True
     run_linear(
-        client_node, input_size, output_size, scaling_factor, tolerance, is_int
+        client_node, input_size, output_size, scaling_factor, tolerance, is_int,False
     )
 
     # Test with float values
-    tolerance = 20
+    tolerance = 1
     is_int = False
     run_linear(
-        client_node, input_size, output_size, scaling_factor, tolerance, is_int
+        client_node, input_size, output_size, scaling_factor, tolerance, is_int,False
     )

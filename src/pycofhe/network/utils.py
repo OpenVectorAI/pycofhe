@@ -102,9 +102,9 @@ def perform_op(
     response = client_node.compute(request)
 
     if response.status != ComputeResponseStatus.OK:
-        raise ValueError(f"Failed to perform operation: {response.data}")
+        raise ValueError(f"Failed to perform operation: {response.data.hex()}")
 
-    return client_node.cryptosystem.deserialize_ciphertext(response.data_bytes)
+    return client_node.cryptosystem.deserialize_ciphertext(response.data)
 
 
 def perform_decryption(
@@ -145,9 +145,9 @@ def perform_decryption(
     response = client_node.compute(request)
 
     if response.status != ComputeResponseStatus.OK:
-        raise ValueError(f"Failed to decrypt ciphertext: {response.data}")
+        raise ValueError(f"Failed to decrypt ciphertext: {response.data.hex()}")
 
-    return client_node.cryptosystem.deserialize_plaintext(response.data_bytes)
+    return client_node.cryptosystem.deserialize_plaintext(response.data)
 
 
 def perform_reencryption(
@@ -196,9 +196,9 @@ def perform_reencryption(
     response = client_node.compute(request)
 
     if response.status != ComputeResponseStatus.OK:
-        raise ValueError(f"Failed to perform operation: {response.data}")
+        raise ValueError(f"Failed to perform operation: {response.data.hex()}")
 
-    return response.data_bytes
+    return response.data
 
 
 def perform_tensor_op(
@@ -275,10 +275,10 @@ def perform_tensor_op(
     response = client_node.compute(request)
 
     if response.status != ComputeResponseStatus.OK:
-        raise ValueError(f"Failed to perform operation: {response.data}")
+        raise ValueError(f"Failed to perform operation: {response.data.hex()}")
 
     return client_node.cryptosystem.deserialize_ciphertext_tensor(
-        response.data_bytes
+        response.data
     )
 
 
@@ -320,10 +320,10 @@ def perform_tensor_decryption(
     response = client_node.compute(request)
 
     if response.status != ComputeResponseStatus.OK:
-        raise ValueError(f"Failed to decrypt tensor: {response.data}")
+        raise ValueError(f"Failed to decrypt tensor: {response.data.hex()}")
 
     return client_node.cryptosystem.deserialize_plaintext_tensor(
-        response.data_bytes
+        response.data
     )
 
 
@@ -373,6 +373,6 @@ def peform_tensor_reencryption(
     response = client_node.compute(request)
 
     if response.status != ComputeResponseStatus.OK:
-        raise ValueError(f"Failed to perform operation: {response.data}")
+        raise ValueError(f"Failed to perform operation: {response.data.hex()}")
 
-    return response.data_bytes
+    return response.data

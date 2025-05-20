@@ -42,10 +42,10 @@ def test_tesnor_reencryption(client_node):
     )
     req = ComputeRequest(op_instance)
     res = client_node.compute(req)
-    res_ct = cs.deserialize_ciphertext_tensor(res.data_bytes)
+    res_ct = cs.deserialize_ciphertext_tensor(res.data)
 
     dop = ComputeOperationOperand(
-        DataType.TENSOR, DataEncryptionType.CIPHERTEXT, res.data_bytes
+        DataType.TENSOR, DataEncryptionType.CIPHERTEXT, res.data
     )
     reencryptor = client_node.reencryptor
     ser_key_pair = reencryptor.generate_serialized_key_pair()
@@ -57,7 +57,7 @@ def test_tesnor_reencryption(client_node):
     req = ComputeRequest(dop_instance)
     res = client_node.compute(req)
 
-    dres = reencryptor.decrypt_tensor(res.data_bytes,res_ct,ser_key_pair[0])
+    dres = reencryptor.decrypt_tensor(res.data,res_ct,ser_key_pair[0])
     float_res = cs.get_float_from_plaintext_tensor(dres)
 
     # Explanation:
@@ -94,10 +94,10 @@ def test_single_ciphertext_reencryption(client_node):
     )
     req = ComputeRequest(op_instance)
     res = client_node.compute(req)
-    res_ct = cs.deserialize_ciphertext(res.data_bytes)
+    res_ct = cs.deserialize_ciphertext(res.data)
 
     dop = ComputeOperationOperand(
-        DataType.SINGLE, DataEncryptionType.CIPHERTEXT, res.data_bytes
+        DataType.SINGLE, DataEncryptionType.CIPHERTEXT, res.data
     )
     reencryptor = client_node.reencryptor
     ser_key_pair = reencryptor.generate_serialized_key_pair()
@@ -109,7 +109,7 @@ def test_single_ciphertext_reencryption(client_node):
     req = ComputeRequest(dop_instance)
     res = client_node.compute(req)
 
-    dres = reencryptor.decrypt(res.data_bytes,res_ct,ser_key_pair[0])
+    dres = reencryptor.decrypt(res.data,res_ct,ser_key_pair[0])
     float_res = cs.get_float_from_plaintext(dres)
 
     # Explanation:

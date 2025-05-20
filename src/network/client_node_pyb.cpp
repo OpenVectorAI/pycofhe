@@ -25,6 +25,73 @@ make_client_node(NetworkDetails& network_details,
     return ClientNode<CryptoSystem>(network_details, cert_file);
 }
 
+void init_client_bindings(py::module_& m) {
+    using namespace CoFHE::Network;
+    py::class_<Client>(m, "Client")
+        .def(py::init<const std::string&, const std::string&,
+                      const std::string&, bool>(),
+             py::arg("address"), py::arg("port"),
+             py::arg("cert") = "./server.pem",
+             py::arg("keep_session_alive") = false,
+             R"pbdoc(
+            Create a client for the given address and port.
+            Args:
+                address (str): The address of the server.
+                port (str): The port of the server.
+                cert (str): The certificate file for the client. Default is "./server.pem".
+                keep_session_alive (bool): Whether to keep the session alive. Default is False.
+        )pbdoc")
+        .def(
+            "run",
+            [](Client& self,
+               const SetupNodeRequest& request) -> SetupNodeResponse {
+                SetupNodeResponse* response = nullptr;
+                try {
+                    self.run(ServiceType::SETUP_REQUEST, request, &response);
+                } catch (const std::exception& e) {
+                    std::cerr << e.what() << std::endl;
+                }
+                if (response == nullptr) {
+                    throw std::runtime_error("Failed to compute the request.");
+                }
+                return *response;
+            },
+            py::arg("request"),
+            R"pbdoc(
+                Run the client with the given type and request.
+
+                Args:
+                    request (SetupNodeRequest): The request to run.
+
+                Returns:
+                    SetupNodeResponse: The response to the request.
+            )pbdoc")
+        .def(
+            "run",
+            [](Client& self, const ComputeRequest& request) -> ComputeResponse {
+                ComputeResponse* response = nullptr;
+                try {
+                    self.run(ServiceType::COMPUTE_REQUEST, request, &response);
+                } catch (const std::exception& e) {
+                    std::cerr << e.what() << std::endl;
+                }
+                if (response == nullptr) {
+                    throw std::runtime_error("Failed to compute the request.");
+                }
+                return *response;
+            },
+            py::arg("request"),
+            R"pbdoc(
+                Run the client with the given type and request.
+
+                Args:
+                    request (ComputeRequest): The request to run.
+
+                Returns:
+                    ComputeResponse: The response to the request.
+            )pbdoc");
+}
+
 template <typename CryptoSystem>
 void init_client_node_bindings(py::module_& m,
                                const std::string& cryptosystem_identifier,
