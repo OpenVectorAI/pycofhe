@@ -41,4 +41,4 @@ You can find the COVToken contract in the [openvector_coprocessor](https://githu
 
 For pycofhe, please see the [pycofhe](https://github.com/OpenVectorAI/pycofhe) repo.
 
-The program uses the endpoint `https://openvector.cofhe.dev:8001/api/v1` to get the latest OpenVector Coprocessor network details.
+The program uses the endpoint `https://http.relayer.cofhe.dev:8001/api/v1` to get the latest OpenVector Coprocessor network details. It also uses the endpoint `https://openvector.cofhe.dev:8002/` for OpenVector Coprocessor's web2 API.

@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from base64 import b64decode, b64encode
 from dataclasses import dataclass
-from enum import Enum
+from enum import Enum, StrEnum
 import json
 import os
 from time import sleep
@@ -14,6 +14,7 @@ from web3 import Account, Web3, HTTPProvider
 from web3.middleware import SignAndSendRawMiddlewareBuilder
 from web3.types import Wei
 from web3.contract import Contract
+from eth_account.messages import encode_defunct
 
 from pycofhe.network import (
     NetworkDetails,
@@ -45,6 +46,8 @@ TRANSCATION_FAILURE_SLEEP_TIMEOUT = 10
 def sleep_after_transcation():
     sleep(TRANSCATION_SLEEP_TIMEOUT)
 
+def sleep_after_web_req():
+    sleep(1)
 
 def sleep_after_transaction_failure():
     sleep(TRANSCATION_FAILURE_SLEEP_TIMEOUT)
@@ -59,7 +62,9 @@ TRANSFER_FUNC_PAYMENT = (
     BASE_PAYMENT + TRANSFER_FUNC_CALLBACK_PAYMENT + PAYMENT_CALLBACK_PAYMENT
 )
 MINT_FUNC_CALLBACK_PAYMENT = 60000 * 1000000000
-MINT_FUNC_PAYMENT = BASE_PAYMENT + MINT_FUNC_CALLBACK_PAYMENT + PAYMENT_CALLBACK_PAYMENT
+MINT_FUNC_PAYMENT = (
+    BASE_PAYMENT + MINT_FUNC_CALLBACK_PAYMENT + PAYMENT_CALLBACK_PAYMENT
+)
 UPDATE_REENCRYPTED_BALANCE_FUNC_CALLBACK_PAYMENT = 2000000 * 1000000000
 UPDATE_REENCRYPTED_BALANCE_FUNC_PAYMENT = (
     BASE_PAYMENT
@@ -111,6 +116,7 @@ class Config:
     contract_address: str
     ov_token_contract_address: str
     openvector_relayer_endpoint_url: str
+    openvector_coprocessor_web2_http_api: str
     contract_abi_file_path: str
     ov_token_contract_abi_file_path: str
     cert_path: str
@@ -139,6 +145,7 @@ config_schema = {
         "contract_address": {"type": "string"},
         "ov_token_contract_address": {"type": "string"},
         "openvector_relayer_endpoint_url": {"type": "string"},
+        "openvector_coprocessor_web2_http_api": {"type": "string"},
         "contract_abi_file_path": {"type": "string"},
         "ov_token_contract_abi_file_path": {"type": "string"},
         "cert_path": {"type": "string"},
@@ -153,6 +160,7 @@ config_schema = {
         "contract_address",
         "ov_token_contract_address",
         "openvector_relayer_endpoint_url",
+        "openvector_coprocessor_web2_http_api",
         "contract_abi_file_path",
         "ov_token_contract_abi_file_path",
         "cert_path",
@@ -178,6 +186,7 @@ def load_config(config_path: str, mode: Mode) -> Config:
             config["contract_address"],
             config["ov_token_contract_address"],
             config["openvector_relayer_endpoint_url"],
+            config["openvector_coprocessor_web2_http_api"],
             config["contract_abi_file_path"],
             config["ov_token_contract_abi_file_path"],
             config["cert_path"],
@@ -214,7 +223,9 @@ def load_config(config_path: str, mode: Mode) -> Config:
 
 def get_network_details(relayer_url: str) -> NetworkDetails:
     try:
-        network_details_req = NetworkDetailsRequest(NetworkDetailsRequestType.GET, b"")
+        network_details_req = NetworkDetailsRequest(
+            NetworkDetailsRequestType.GET, b""
+        )
         setup_node_req = SetupNodeRequest(
             SetupNodeRequestType.NetworkDetailsRequest,
             network_details_req.to_string(),
@@ -258,7 +269,10 @@ def get_network_details(relayer_url: str) -> NetworkDetails:
                 network_details_response = NetworkDetailsResponse.from_string(
                     setup_res.data,
                 )
-                if network_details_response.status != NetworkDetailsResponseStatus.OK:
+                if (
+                    network_details_response.status
+                    != NetworkDetailsResponseStatus.OK
+                ):
                     raise ValueError(
                         f"Failed to fetch network details, status code: {network_details_response.status}"
                     )
@@ -470,7 +484,9 @@ def get_conversion_rate(
     contract: Contract,
 ) -> Tuple[int, int]:
     try:
-        ov_conversion_rate = contract.functions.getOVTokenToCOVTokenRatio().call()
+        ov_conversion_rate = (
+            contract.functions.getOVTokenToCOVTokenRatio().call()
+        )
         eth_conversion_rate = contract.functions.getEthToCOVTokenRatio().call()
         return ov_conversion_rate, eth_conversion_rate
     except Exception as e:
@@ -502,6 +518,7 @@ def submit_mint_request(
     )
     ser_amount = serialize_single(client.cryptosystem, enc_amount)
     if first_call:
+        print(f"Plaintext Amount: {amount}")
         print(f"Serialized Encrypted Amount: {ser_amount.hex()}")
     try:
         tx_hash = contract.functions.mint(recipient, ser_amount).transact(
@@ -522,7 +539,9 @@ def submit_mint_request(
         user_input = input("Do you want to try again? (y/n): ")
         if user_input.lower() != "n":
             print("Retrying mint request")
-            submit_mint_request(w3, client, contract, amount, sender, recipient, False)
+            submit_mint_request(
+                w3, client, contract, amount, sender, recipient, False
+            )
         else:
             print("Mint request cancelled")
             return
@@ -539,11 +558,13 @@ def submit_mint_with_ov_token_request(
     mode: Mode = Mode.CLI_APP,
 ) -> None:
     if first_call:
-        print(f"Submitting mint request using OV token for {amount} to {recipient}")
-    try:
-        tx_hash = contract.functions.mintFromOVToken(recipient, amount).transact(
-            {"from": sender, "value": Wei(MINT_FUNC_PAYMENT)}
+        print(
+            f"Submitting mint request using OV token for {amount} to {recipient}"
         )
+    try:
+        tx_hash = contract.functions.mintFromOVToken(
+            recipient, amount
+        ).transact({"from": sender, "value": Wei(MINT_FUNC_PAYMENT)})
         sleep_after_transcation()
         print("Mint request using OV token submitted")
         print(f"Transaction hash: 0x{tx_hash.hex()}")
@@ -560,7 +581,13 @@ def submit_mint_with_ov_token_request(
         if user_input.lower() != "n":
             print("Retrying mint request using OV token")
             submit_mint_with_ov_token_request(
-                w3, contract, ov_token_contract, amount, sender, recipient, False
+                w3,
+                contract,
+                ov_token_contract,
+                amount,
+                sender,
+                recipient,
+                False,
             )
         else:
             print("Mint request using OV token cancelled")
@@ -581,7 +608,10 @@ def submit_mint_with_eth_request(
         print(f"Submitting mint request using ETH for {amount} to {recipient}")
     try:
         tx_hash = contract.functions.mintFromEth(recipient, amount).transact(
-            {"from": sender, "value": Wei(MINT_FUNC_PAYMENT + amount * conversion_rate)}
+            {
+                "from": sender,
+                "value": Wei(MINT_FUNC_PAYMENT + amount * conversion_rate),
+            }
         )
         sleep_after_transcation()
         print("Mint request using ETH submitted")
@@ -598,7 +628,9 @@ def submit_mint_with_eth_request(
         user_input = input("Do you want to try again? (y/n): ")
         if user_input.lower() != "n":
             print("Retrying mint request using ETH")
-            submit_mint_with_eth_request(w3, contract, amount, sender, recipient, False)
+            submit_mint_with_eth_request(
+                w3, contract, amount, sender, recipient, False
+            )
         else:
             print("Mint request using ETH cancelled")
             return
@@ -681,7 +713,9 @@ def submit_key_registration_request(
         user_input = input("Do you want to try again? (y/n): ")
         if user_input.lower() != "n":
             print("Retrying key registration request")
-            submit_key_registration_request(w3, contract, sender, public_key, False)
+            submit_key_registration_request(
+                w3, contract, sender, public_key, False
+            )
         else:
             print("Key registration request cancelled")
             return
@@ -698,7 +732,10 @@ def submit_balance_update_request(
         print(f"Submitting encrypted balance sync request for {sender}")
     try:
         tx_hash = contract.functions.updateEncryptedBalance().transact(
-            {"from": sender, "value": Wei(UPDATE_ENCRYPTED_BALANCE_FUNC_PAYMENT)}
+            {
+                "from": sender,
+                "value": Wei(UPDATE_ENCRYPTED_BALANCE_FUNC_PAYMENT),
+            }
         )
         sleep_after_transcation()
         print("Encrypted Balance sync request submitted")
@@ -732,7 +769,10 @@ def submit_balance_reencryption_request(
         print(f"Submitting balance reencryption sync request for {sender}")
     try:
         tx_hash = contract.functions.updateReencryptedBalance().transact(
-            {"from": sender, "value": Wei(UPDATE_REENCRYPTED_BALANCE_FUNC_PAYMENT)}
+            {
+                "from": sender,
+                "value": Wei(UPDATE_REENCRYPTED_BALANCE_FUNC_PAYMENT),
+            }
         )
         sleep_after_transcation()
         print("Balance reencryption sync request submitted")
@@ -777,9 +817,9 @@ def get_balance(
             )
             if user_input.lower() != "n":
                 print("Retrying get balance")
-                ser_enc_bal = contract.functions.encrypted_balances(account).call(
-                    {"from": account}
-                )
+                ser_enc_bal = contract.functions.encrypted_balances(
+                    account
+                ).call({"from": account})
             else:
                 print("Get balance request cancelled")
                 return -1
@@ -797,9 +837,9 @@ def get_balance(
             )
             if user_input.lower() != "n":
                 print("Retrying get balance")
-                renc_bal = contract.functions.reencrypted_balances(account).call(
-                    {"from": account}
-                )
+                renc_bal = contract.functions.reencrypted_balances(
+                    account
+                ).call({"from": account})
             else:
                 print("Get balance request cancelled")
                 return -1
@@ -812,7 +852,9 @@ def get_balance(
         print(f"Reencrypted balance: {renc_bal.hex()}\n")
         reencryptor = client_node.reencryptor
         plaintext = reencryptor.decrypt(renc_bal, enc_bal, esk)
-        int_bal = int(client_node.cryptosystem.get_float_from_plaintext(plaintext))
+        int_bal = int(
+            client_node.cryptosystem.get_float_from_plaintext(plaintext)
+        )
         if mode != Mode.CLI_APP:
             print(f"Decrypted balance: {int_bal}")
         return int_bal
@@ -825,6 +867,242 @@ def get_balance(
             return get_balance(contract, account, client_node, esk, False)
         else:
             print("Get balance request cancelled")
+            return -1
+
+
+def sign_message(private_key: str, message: str) -> str:
+    message_hash_encoded = encode_defunct(text=message)
+    signed_message = Account.sign_message(
+        message_hash_encoded, private_key=private_key
+    )
+    return signed_message.signature.hex()
+
+
+def fetch_balance_using_web2_http_api(
+    client_node: CPUCryptoSystemClientNode,
+    private_key: str,
+    contract: Contract,
+    account: str,
+    esk: bytes,
+    epk: bytes,
+    coprocessor_web2_http_api: str,
+    first_call: bool = True,
+    mode: Mode = Mode.CLI_APP,
+) -> int:
+    if first_call:
+        print(f"Fetching balance for {account} using Web2 HTTP API")
+
+    try:
+        user_balance_key = contract.functions.balances(account).call(
+            {"from": account}
+        )
+
+        if not user_balance_key:
+            print(
+                f"Theres no record for account {account} in the contract. Generally it means you have 0 balance as you not minted or received any COV tokens"
+            )
+            return 0
+
+        if mode != Mode.CLI_APP:
+            print(f"User balance key: {user_balance_key}")
+
+        preprocess_request = {
+            "operation_types": [
+                "retrieve",
+                "retrieve_reencrypt",
+            ],
+            "verification_proof": sign_message(
+                private_key,
+                json.dumps(
+                    sorted(
+                        [
+                            "retrieve",
+                            "retrieve_reencrypt",
+                        ]
+                    ),
+                    separators=(',', ':')
+                ),
+            ),
+        }
+        preprocess_response = requests.post(
+            f"{coprocessor_web2_http_api}/request_preprocess",
+            json=preprocess_request,
+        )
+        if preprocess_response.status_code != 200:
+            raise ValueError(
+                f"Failed to preprocess request, status code: {preprocess_response.status_code}"
+            )
+        preprocess_response_data = preprocess_response.json()
+        if preprocess_response_data["status"] != "OK":
+            raise ValueError(
+                f"Failed to preprocess request, status: {preprocess_response_data['status']}"
+            )
+        random_nonce = preprocess_response_data["random_nonce"]
+        if mode != Mode.CLI_APP:
+            print(f"Random nonce: {random_nonce}")
+
+        reqs = [
+            {
+                "id": "",
+                "operation": "retrieve",
+                "op1": {
+                    "data_type": "single",
+                    "location": "storage_key",
+                    "encryption_scheme": "clhsm2k",
+                    "data": b64encode(
+                        user_balance_key.to_bytes(16, "big")
+                    ).decode("ascii"),
+                },
+                "op2": {
+                    "data_type": "single",
+                    "location": "storage_key",
+                    "encryption_scheme": "none",
+                    "data": b64encode(b"").decode("ascii"),
+                },
+                "verified_origin": b64encode(b"").decode("ascii"),
+            },
+            {
+                "id": "",
+                "operation": "retrieve_reencrypt",
+                "op1": {
+                    "data_type": "single",
+                    "location": "storage_key",
+                    "encryption_scheme": "rsa",
+                    "data": b64encode(
+                        user_balance_key.to_bytes(16, "big")
+                    ).decode("ascii"),
+                },
+                "op2": {
+                    "data_type": "reencryption_key",
+                    "location": "value",
+                    "encryption_scheme": "none",
+                    "data": b64encode(epk).decode("ascii"),
+                },
+                "verified_origin": b64encode(b"").decode("ascii"),
+            },
+        ]
+        reqs_as_json_strings = [
+            json.dumps(r, separators=(",", ":")) for r in reqs
+        ]
+        request_submission_request = {
+            "random_nonce": random_nonce,
+            "requests": reqs,
+            "verification_proof": sign_message(
+                private_key,
+                json.dumps(
+                    {
+                        "requests": reqs_as_json_strings,
+                        "random_nonce": random_nonce,
+                    },
+                    separators=(',', ':')
+                ),
+            ),
+        }
+        request_submission_response = requests.post(
+            f"{coprocessor_web2_http_api}/request",
+            json=request_submission_request,
+        )
+        if request_submission_response.status_code != 200:
+            raise ValueError(
+                f"Failed to submit request, status code: {request_submission_response.status_code}"
+            )
+        request_submission_response_data = request_submission_response.json()
+        if request_submission_response_data["status"] != "OK":
+            raise ValueError(
+                f"Failed to submit request, status: {request_submission_response_data['status']}"
+            )
+        request_ids = request_submission_response_data["request_ids"]
+        sleep_after_web_req()
+        if mode != Mode.CLI_APP:
+            print(f"Request IDs: {request_ids}")
+        if not request_ids:
+            raise ValueError("No request IDs returned from the server")
+        if len(request_ids) != 2:
+            raise ValueError(f"Expected 2 request IDs, got {len(request_ids)}")
+        fetch_response = requests.post(
+            f"{coprocessor_web2_http_api}/response",
+            json={"request_id": request_ids},
+        )
+        if fetch_response.status_code != 200:
+            raise ValueError(
+                f"Failed to fetch response, status code: {fetch_response.status_code}"
+            )
+        fetch_response_data = fetch_response.json()
+        if fetch_response_data["status"] != "OK":
+            raise ValueError(
+                f"Failed to fetch response, status: {fetch_response_data['status']}"
+            )
+        responses = fetch_response_data["responses"]
+        if not responses or len(responses.keys()) != 2:
+            raise ValueError(
+                f"Expected 2 responses, got {len(responses.keys())}"
+            )
+
+        retrieve_response = None
+        retrieve_reencrypt_response = None
+        for req_id, resps in responses.items():
+            for res in resps:
+                if res.get("status") not in ["success", "accepted"]:
+                    raise ValueError(
+                        f"Failed to fetch response, status: {res.get('status')}"
+                    )
+                if req_id == request_ids[0]:
+                    if res.get("status") == "success":
+                        retrieve_response = res
+                if req_id == request_ids[1]:
+                    if res.get("status") == "success":
+                        retrieve_reencrypt_response = res
+        if retrieve_response is None or retrieve_reencrypt_response is None:
+            raise ValueError(
+                "Failed to fetch both retrieve and/or retrieve_reencrypt responses"
+            )
+
+        encrypted_operand = retrieve_response.get("result")
+        if not encrypted_operand:
+            raise ValueError("No encrypted operand found in retrieve response")
+        encrypted_data = encrypted_operand.get("data")
+        reencrypted_operand = retrieve_reencrypt_response.get("result")
+        if not reencrypted_operand:
+            raise ValueError(
+                "No reencrypted operand found in retrieve_reencrypt response"
+            )
+        reencrypted_data = reencrypted_operand.get("data")
+        if not encrypted_data or not reencrypted_data:
+            raise ValueError(
+                "No encrypted data or reencrypted data found in responses"
+            )
+        if mode != Mode.CLI_APP:
+            print(f"Encrypted data: {b64decode(encrypted_data).hex()}")
+            print(f"Reencrypted data: {b64decode(reencrypted_data).hex()}")
+
+        enc_bal = deserialize_single(
+            client_node.cryptosystem, b64decode(encrypted_data)
+        )
+        reenc_bal = b64decode(reencrypted_data)
+        pt = client_node.reencryptor.decrypt(reenc_bal, enc_bal, esk)
+        int_bal = int(client_node.cryptosystem.get_float_from_plaintext(pt))
+        if mode != Mode.CLI_APP:
+            print(f"Decrypted balance: {int_bal}")
+        return int_bal
+    except Exception as e:
+        sleep_after_transaction_failure()
+        print(f"Failed to fetch user balance key: {e}")
+        user_input = input("Do you want to try again? (y/n): ")
+        if user_input.lower() != "n":
+            print("Retrying fetch user balance key")
+            return fetch_balance_using_web2_http_api(
+                client_node,
+                private_key,
+                contract,
+                account,
+                esk,
+                epk,
+                coprocessor_web2_http_api,
+                False,
+                mode,
+            )
+        else:
+            print("Fetch user balance key request cancelled")
             return -1
 
 
@@ -845,7 +1123,12 @@ def test_mint(
     recipient = Account.from_key(recipient_priv_key)
     set_middleware_and_default_account(w3, sender_priv_key)
     submit_mint_request(
-        w3, client, contract, balance_to_mint_sender, sender.address, sender.address
+        w3,
+        client,
+        contract,
+        balance_to_mint_sender,
+        sender.address,
+        sender.address,
     )
     # print(f"Sleeping for {WAIT_BETWEEN_STEPS} seconds")
     sleep(WAIT_BETWEEN_STEPS)
@@ -959,17 +1242,26 @@ def test_transfer(
 
 def test(config_path: str):
     print("Running test")
-    w3, client, contract, ov_token_contract, sender_priv_key, recipient_priv_key = (
-        setup(config_path, Mode.TEST)
-    )
+    (
+        w3,
+        client,
+        contract,
+        ov_token_contract,
+        sender_priv_key,
+        recipient_priv_key,
+    ) = setup(config_path, Mode.TEST)
     sender_key_pair = client.reencryptor.generate_serialized_key_pair()
     rec_key_pair = client.reencryptor.generate_serialized_key_pair()
     sender = Account.from_key(sender_priv_key)
     recipient = Account.from_key(recipient_priv_key)
     set_middleware_and_default_account(w3, sender_priv_key)
-    submit_key_registration_request(w3, contract, sender.address, sender_key_pair[1])
+    submit_key_registration_request(
+        w3, contract, sender.address, sender_key_pair[1]
+    )
     set_middleware_and_default_account(w3, recipient_priv_key)
-    submit_key_registration_request(w3, contract, recipient.address, rec_key_pair[1])
+    submit_key_registration_request(
+        w3, contract, recipient.address, rec_key_pair[1]
+    )
     # print(f"Sleeping for {WAIT_BETWEEN_STEPS} seconds")
     sleep(WAIT_BETWEEN_STEPS)
     test_mint(
@@ -1007,8 +1299,12 @@ def save_key(priv_key: bytes, pub_key: bytes) -> None:
         f.write(pub_key)
     print("Public key saved to public_key.txt")
     print("Add the following lines to the config file:")
-    print(f"\"rsa_private_key_path\": \"{os.path.abspath('rsa_private_key.txt')}\",")
-    print(f"\"rsa_public_key_path\": \"{os.path.abspath('rsa_public_key.txt')}\"")
+    print(
+        f"\"rsa_private_key_path\": \"{os.path.abspath('rsa_private_key.txt')}\","
+    )
+    print(
+        f"\"rsa_public_key_path\": \"{os.path.abspath('rsa_public_key.txt')}\""
+    )
 
 
 def load_key(priv_key_file: str, pub_key_file: str) -> Tuple[bytes, bytes]:
@@ -1088,7 +1384,14 @@ def cli_app(config_path: str):
             amount = int(input("Enter amount to mint: "))
             if mint_choice == "0":
                 submit_mint_request(
-                    w3, client, contract, amount, address, address, True, Mode.CLI_APP
+                    w3,
+                    client,
+                    contract,
+                    amount,
+                    address,
+                    address,
+                    True,
+                    Mode.CLI_APP,
                 )
             elif mint_choice == "1":
                 print(f"OV Token conversion rate: {conversion_rate[0]}")
@@ -1126,24 +1429,62 @@ def cli_app(config_path: str):
             recipient = input("Enter recipient address: ")
             amount = int(input("Enter amount to transfer: "))
             submit_transfer_request(
-                w3, client, contract, amount, address, recipient, True, Mode.CLI_APP
+                w3,
+                client,
+                contract,
+                amount,
+                address,
+                recipient,
+                True,
+                Mode.CLI_APP,
             )
         elif choice == "3":
-            if rsa_priv_key == b"" or rsa_pub_key == b"":
-                print(
-                    "Reencryption keys not found. Please first register new keys to fetch balance."
+            print("\nFetch Balance Menu:")
+            print("0. Fetch balance using Web2 HTTP API")
+            print("1. Fetch balance using smart contract")
+            balance_choice = input("Enter your choice: ")
+            if balance_choice == "0":
+                rsa_priv_key_c = rsa_priv_key if rsa_priv_key else b""
+                rsa_pub_key_c = rsa_pub_key if rsa_pub_key else b""
+                if rsa_priv_key == b"" or rsa_pub_key == b"":
+                    rsa_priv_key_c, rsa_pub_key_c = (
+                        client.reencryptor.generate_serialized_key_pair()
+                    )
+                balance = fetch_balance_using_web2_http_api(
+                    client,
+                    priv_key,
+                    contract,
+                    address,
+                    rsa_priv_key_c,
+                    rsa_pub_key_c,
+                    config.openvector_coprocessor_web2_http_api,
+                    True,
+                    Mode.CLI_APP,
                 )
+                if balance != -1:
+                    print(f"Fetched balance: {balance}")
+            elif balance_choice == "1":
+                if rsa_priv_key == b"" or rsa_pub_key == b"":
+                    print(
+                        "Reencryption keys not found. Please first register new keys to fetch balance."
+                    )
+                    continue
+                submit_balance_update_request(
+                    w3, contract, address, True, Mode.CLI_APP
+                )
+                submit_balance_reencryption_request(
+                    w3, contract, address, True, Mode.CLI_APP
+                )
+                sleep_after_transcation()
+                balance = get_balance(
+                    contract, address, client, rsa_priv_key, True, Mode.CLI_APP
+                )
+                if balance != -1:
+                    print(f"Fetched balance: {balance}")
+            else:
+                print("Invalid choice")
+                print("Please try again")
                 continue
-            print("Fetching balance...")
-            submit_balance_update_request(w3, contract, address, True, Mode.CLI_APP)
-            submit_balance_reencryption_request(
-                w3, contract, address, True, Mode.CLI_APP
-            )
-            sleep_after_transcation()
-            balance = get_balance(
-                contract, address, client, rsa_priv_key, True, Mode.CLI_APP
-            )
-            print(f"Fetched balance: {balance}")
         elif choice == "4":
             print("\nOV Token Menu:")
             print("0. Mint OV Token")
@@ -1164,7 +1505,13 @@ def cli_app(config_path: str):
             elif ov_token_choice == "1":
                 amount = int(input("Enter amount to approve: "))
                 submit_ov_token_approve_request(
-                    w3, ov_token_contract, address, config.contract_address , amount, True, Mode.CLI_APP
+                    w3,
+                    ov_token_contract,
+                    address,
+                    config.contract_address,
+                    amount,
+                    True,
+                    Mode.CLI_APP,
                 )
             elif ov_token_choice == "2":
                 balance = get_ov_token_balance(
