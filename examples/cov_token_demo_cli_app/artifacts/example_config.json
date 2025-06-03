@@ -1,6 +1,6 @@
 {
     "provider_uri": "xxxxxx",
-    "contract_address": "0x1a19F6ABC948CeB8C8943b86548F7e04c0A8F1E3",
+    "contract_address": "0x2217D4916A7577CBd18447Ef842C5566513d0e11",
     "ov_token_contract_address": "0x3CEa0f53909E8Ef1Dbd86E59D50aDe14A6819107",
     "openvector_relayer_endpoint_url": "https://http.relayer.cofhe.dev:8001/api/v1",
     "openvector_coprocessor_web2_http_api": "https://openvector.cofhe.dev:8002/",
